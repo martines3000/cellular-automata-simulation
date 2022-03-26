@@ -1,5 +1,6 @@
 # Rust cellular automata
 
+[DEMO](https://is.simulation.skippy-ai.com)
 - Cave generation
 - Simulation of various materials
   - Water
