@@ -1,0 +1,23 @@
+[package]
+name = "vaja_2"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"], optional = true }
+ndarray = "0.15.4"
+egui = "0.17.0"
+eframe = "0.17.0"
+rand = "0.8.5"
+getrandom = { version = "0.2", features = ["js"] }
+instant = { version = "0.1", features = [ "wasm-bindgen", "inaccurate" ] }
+
+[profile.release]
+opt-level = 2 # fast and small wasm
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook = "0.1.6"
+tracing-wasm = "0.2"
