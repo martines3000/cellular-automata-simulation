@@ -1,5 +1,8 @@
 pub mod cell;
 
+#[cfg(test)]
+mod tests;
+
 use std::{mem, time::Duration};
 
 use egui::{pos2, vec2, Color32, Pos2, Rect, Rounding, Shape, Vec2};
@@ -400,8 +403,11 @@ impl World {
                 if self.data[[y, x]].cell_type.eq(&CellType::Water) {
                     remaining_mass = self.data[[y, x]].mass;
                     if remaining_mass < MIN_MASS {
-                        self.tmp[[y, x]].cell_type = CellType::None;
-                        self.tmp[[y, x]].mass = 0.0;
+                        // Discard only the old residue; tmp also holds incoming water.
+                        self.tmp[[y, x]].mass -= remaining_mass;
+                        if self.tmp[[y, x]].mass < MIN_MASS {
+                            self.tmp[[y, x]].cell_type = CellType::None;
+                        }
                         continue;
                     }
 
