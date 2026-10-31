@@ -14,7 +14,7 @@
 - [x] F14: copy into allocated scratch; equivalence and allocation-identity checks.
 - [x] F13: skip empty/offscreen shapes; retain water/wood geometry; reuse shape capacity.
 - [x] Remove six baseline lint diagnostics and make the strict check script pass.
-- [ ] Native UI: actual startup, pause/play, rate, painting, zoom, Clear/Generate/Smooth.
+- [x] Native UI: actual startup, pause/play, rate, painting, zoom, Clear/Generate/Smooth.
 - [ ] Pin installed Rust 1.95.0, track the current native Cargo.lock, add native CI.
 - [ ] Final sequential checks, unchanged historical hashes, clean commits/push.
 
@@ -75,3 +75,13 @@ Lint cleanup: redundant field, needless returns, identical Smooth branches and
 nested wood condition simplified without changing rules. Renderer already removed
 the unnecessary cast. Strict all-target/all-feature Clippy now passes with
 `-D warnings -W clippy::all`; all 50 tests and desktop binary build pass.
+
+Native UI (Apple Silicon macOS, debug binary at `3a32a09`): temporary app wrapper
+in /tmp enabled native computer-use access. Observed bordered world, water/sand
+painting, Block size 5→12→5, Steps/s 60→300, Toggle disabling/enabling editing,
+sand arriving at bottom border, Generate random cave, Smooth changing cave and
+Clear restoring empty bordered world. Paused painting retained cells. Native
+drag automation did not move reliably (also failed to move window titles), so
+drag correctness relies on deterministic RawInput tests; no runtime drag or FPS
+claim. Screenshots remained tool output; no binary/private runtime data tracked.
+Owned application stopped before resuming compiler checks.
