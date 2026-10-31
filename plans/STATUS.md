@@ -6,8 +6,8 @@ Assessment: [review-report.html](../review-report.html#F04).
 ## Verification coordination
 
 - Owner: Codex, this chat; sole editor of `src/app/world/mod.rs`.
-- Active job: mixed-material/scaling correctness tests, then local performance
-  measurements; Codex owns the shared lock. One worktree, no competing jobs.
+- Active job: none. Local checks/setup complete, owned native process stopped,
+  shared lock released. Timed sampling deferred at the user's explicit request.
 - Shared lock for cooperating workers:
   `/tmp/cellular-automata-simulation-verification.lock` (directory; owner recorded
   inside). Inspect process inventory before acquiring; never remove another owner's
@@ -29,23 +29,30 @@ Assessment: [review-report.html](../review-report.html#F04).
 | Committed/pushed | F16 input / F15 repaint | `18ff7e5`; primary clicks/dragging, coalesced click handling and idle paused frames; real egui input regressions. [Native follow-up plan](completed/native-polish.md). |
 | Committed/pushed | F14 scratch reuse | `64651d4`; original two allocations retained; 100-tick equality against clone reference. |
 | Committed/pushed | F13 rendering | `3913e5f`; visible-cell culling, empty-cell omission and shape capacity reuse, geometry regressions. |
-| Committed | Display visibility/timing | `d68114d`; collapsed Display keeps active simulation advancing; preserves pause and paint/update order. [Completed plan](completed/display-visibility.md). |
+| Committed/pushed | Display visibility/timing | `d68114d`; collapsed Display keeps active simulation advancing; preserves pause and paint/update order. [Completed plan](completed/display-visibility.md). |
+| Committed/pushed | Mixed-material water preservation | `563cfb2`; sand/fire/smoke displacement preserves passive water; seeded full-phase budgets. [Completed plan](completed/mixed-material-performance.md). |
+| Committed/pushed | Larger-world setup and scaling | `449ed04`; 100/256/512/1024 controls, compact 8 B cells and row geometry merging; local-only Divan harness. |
+| Deferred by user | CPU/GPU/frame measurements | [Local sampling plan](planned/local-performance-measurements.md); ready for a quiet exclusive slot; no timing/FPS claim. |
 
 The user's 2026-10-30 follow-up authorized committing/pushing on a fresh branch
 and continuing work; on 2026-10-31 the user requested edge-case regressions.
 The simulation correctness sequence F03–F08 is complete. Resolution details belong
 in completed plans. F04's four historical evidence files are now tracked unchanged.
 
-Latest local verification (2026-10-31): `bash check.sh` passes using pinned Rust
-1.95.0 and the committed native Cargo.lock: check/build, fmt, strict Clippy (zero
-diagnostics), 53 all-target/all-feature debug tests, 0 doc tests and 53 release
-all-feature tests. Mechanical lint cleanup: `3a32a09`. Native UI results/limits:
-`611c83b`; macOS startup, painting, zoom, rate, play/pause, Clear/Generate/Smooth
-observed. Automated native dragging was unreliable; headless RawInput tests cover
-it. No controlled performance or Windows execution claim.
+Latest local verification (2026-10-31): `bash check.sh` passes using Rust 1.95.0
+and the committed lock: native check/build, fmt, strict Clippy, 65 debug and 65
+release all-feature tests; 2 performance helpers ignored; 0 doc tests. Separate
+non-timing harness smoke passes all 32 workload/size cases. No timed sampling ran.
 
-Reproducible native builds: `af94baf`. Existing 325-package graph committed
-unchanged, Rust 1.95.0 pinned, all Cargo checks locked. The user subsequently
+Exact scaling checks: Cell 24→8 B; two 1024² grids 48→16 MiB; full dense-basin
+rectangles 526,334→2,557. Twelve seeded fractional/panned coverage snapshots match.
+Native check confirmed resize to 1024 and expanded pan limits; later automated
+input failed while the process remained alive. Further native visual validation
+and GPU/frame timings remain unverified. [Dated evidence](../reviews/evidence/2026-10-31-scaling.md).
+
+Reproducible native builds: `af94baf`. The native graph was committed
+unchanged at that milestone; current lock adds 8 dev-only benchmark packages.
+Rust 1.95.0 is pinned and Cargo checks are locked. The user subsequently
 requested local-only testing: CI run confirmed cancelled, workflow confirmed disabled
 and removed, with README/AGENTS updated. No future Actions runs are configured.
 Ubuntu's brief CI run passed; it reported a quick-xml 0.22.0 future-compatibility
@@ -54,17 +61,16 @@ warning. Dependency migration remains separate. Browser delivery was removed
 
 All sixteen historical findings are implemented or retired by browser removal.
 Historical reports and extracted evidence remain byte-for-byte unchanged. Counts
-in earlier rows describe those commits; current suite contains 53 tests.
+in earlier rows describe those commits; current suite contains 65 correctness
+tests plus 2 ignored performance helpers.
 
-[Completed native follow-up](completed/native-polish.md) records decisions,
-commands, evidence and limits. Future work is separate: dependency compatibility,
-controlled frame profiling and any engine/rendering redesign. Windows support
-is outside the backlog at the user's request.
+[Completed native follow-up](completed/native-polish.md) and
+[Display visibility fix](completed/display-visibility.md) retain their earlier
+commands/results. [Completed mixed-material/scaling setup](completed/mixed-material-performance.md)
+records the current changes, exact checks and limits.
 
-2026-10-31 follow-up: [Display visibility/timing](completed/display-visibility.md)
-reproduced before the fix and passed after it. Three new regressions cover
-collapse/reopen, unchanged paused frames and painting before ticking. Local-only
-`bash check.sh` passes all 53 tests in debug/release plus strict Clippy.
-
-Active plan: [Mixed materials and local scaling](planned/mixed-material-performance.md).
-Windows removed from future work; all validation remains local-only.
+Remaining priorities: collect local performance samples when the user is ready,
+then profile native frames/decide any further engine or renderer work from evidence;
+dependency compatibility remains separate (historical quick-xml warning). Windows
+support is removed from the backlog; CI remains removed. Benchmark tools and GPU
+tradeoffs are in [PERFORMANCE.md](../PERFORMANCE.md) and its linked research.
