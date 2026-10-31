@@ -1,7 +1,7 @@
 # Remove browser delivery and retain native desktop use
 
 - Owner: Codex, this chat, including serialized verification.
-- Status: complete and verified in working tree (2026-10-31); committing separately.
+- Status: complete, committed/pushed as `778f2c8` (2026-10-31).
 - Authorization: user requested removal of WASM/browser-related things, then the
   next task. Preserve historical assessment/evidence and prior implementation plans.
 

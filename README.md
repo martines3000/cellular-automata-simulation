@@ -21,10 +21,17 @@ Run the headless regression suite with:
 CARGO_BUILD_JOBS=2 cargo +1.95.0 test --workspace --all-targets --all-features -- --test-threads=1
 ```
 
-The project currently targets desktop use. The former browser build and hosting
-files have been removed. The historical assessment is preserved in
+The project targets desktop use. The historical assessment is preserved in
 [review-report.html](review-report.html); current findings and verification are
 tracked in [plans/STATUS.md](plans/STATUS.md).
+
+## Simulation timing
+
+The Steps/s slider requests 1–360 simulation steps per second. Fractional elapsed
+time carries across frames. Pause/resume and rate changes start a fresh interval.
+After a long stall, an update runs at most 16 catch-up steps and drops excess
+whole-step debt to keep the UI responsive; achievable speed still depends on the
+machine keeping up.
 
 ## Possible improvements
 

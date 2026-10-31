@@ -63,6 +63,7 @@ impl epi::App for App {
             ui.horizontal(|ui| {
                 if ui.add(Button::new("Toggle")).clicked() {
                     *running = !*running;
+                    world.reset_timing();
                 }
 
                 if ui
@@ -86,14 +87,14 @@ impl epi::App for App {
 
             if ui
                 .add(
-                    Slider::new(&mut world.fps, 1..=360)
+                    Slider::new(&mut world.steps_per_second, 1..=360)
                         .step_by(1.0)
                         .orientation(SliderOrientation::Horizontal)
-                        .text("FPS"),
+                        .text("Steps/s"),
                 )
                 .changed()
             {
-                world.update_speed();
+                world.reset_timing();
             }
 
             if ui

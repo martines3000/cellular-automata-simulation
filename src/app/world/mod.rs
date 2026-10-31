@@ -9,6 +9,9 @@ mod edit_state_tests;
 #[cfg(test)]
 mod wood_tests;
 
+#[cfg(test)]
+mod timing_tests;
+
 use std::{
     mem,
     time::{Duration, Instant},
@@ -27,6 +30,8 @@ const MIN_DRAW: f32 = 0.1;
 const MIN_MASS: f32 = 0.01;
 const MAX_MASS: f32 = 10.0;
 const FLOW_SMOOTH: f32 = 0.75;
+const MAX_STEPS_PER_UPDATE: usize = 16;
+const NANOS_PER_SECOND: u128 = 1_000_000_000;
 
 const NEIGHBOURHOOD: [(i32, i32); 8] = [
     (-1, -1),
@@ -47,11 +52,11 @@ pub struct World {
     pub block_size: f32,
     pub pos_shift: Vec2,
     pub shift: Vec2,
-    pub fps: i32,
+    pub steps_per_second: i32,
     pub threshold: f32,
     pub selected_cell_type: CellType,
     pub use_shift: bool,
-    speed: u128,
+    step_credit: u128,
     num_of_blocks: usize,
     last_frame_time: Instant,
     rng: ThreadRng,
@@ -80,9 +85,9 @@ impl World {
             block_size: 5.0,
             pos_shift: vec2(0.0, 0.0),
             shift: vec2(0.0, 0.0),
-            fps: 60,
+            steps_per_second: 60,
             threshold: 0.5,
-            speed: World::fps_to_speed(60.0),
+            step_credit: 0,
             num_of_blocks: num_of_blocks,
             last_frame_time: Instant::now(),
             selected_cell_type: CellType::Water,
@@ -178,10 +183,6 @@ impl World {
                 }
             }
         }
-    }
-
-    pub fn fps_to_speed(fps: f32) -> u128 {
-        Duration::new(0, (1000000000.0 / fps) as u32).as_millis()
     }
 
     pub fn bounds_valid(&self, block: Vec2) -> bool {
@@ -617,13 +618,31 @@ impl World {
     }
 
     pub fn update(&mut self) {
-        let duration_since_last_frame = Instant::now().duration_since(self.last_frame_time);
-        if duration_since_last_frame.as_millis().lt(&self.speed) {
-            return;
-        }
+        let now = Instant::now();
+        let elapsed = now.duration_since(self.last_frame_time);
+        self.last_frame_time = now;
+        self.advance(elapsed);
+    }
 
+    pub fn reset_timing(&mut self) {
+        self.step_credit = 0;
         self.last_frame_time = Instant::now();
+    }
 
+    fn advance(&mut self, elapsed: Duration) -> usize {
+        self.steps_per_second = self.steps_per_second.clamp(1, 360);
+        // Nanoseconds × steps/s retains fractional ticks without millisecond truncation.
+        let credit = self.step_credit + elapsed.as_nanos() * self.steps_per_second as u128;
+        let steps = (credit / NANOS_PER_SECOND).min(MAX_STEPS_PER_UPDATE as u128) as usize;
+        // Drop excess whole-tick debt after a stall, keeping its fractional remainder.
+        self.step_credit = credit % NANOS_PER_SECOND;
+        for _ in 0..steps {
+            self.tick();
+        }
+        steps
+    }
+
+    fn tick(&mut self) {
         // Sand
         self.tmp = self.data.clone();
         self.update_sand();
@@ -651,10 +670,6 @@ impl World {
         }
 
         self.add_border();
-    }
-
-    pub fn update_speed(&mut self) {
-        self.speed = World::fps_to_speed(self.fps as f32);
     }
 
     pub fn update_pos(&mut self) {
