@@ -202,7 +202,7 @@ impl epi::App for App {
             });
         });
 
-        egui::Window::new("Display")
+        let display = egui::Window::new("Display")
             .default_size(vec2(600.0, 600.0))
             .default_pos(Pos2 { x: 600.0, y: 200.0 })
             .show(ctx, |ui| {
@@ -248,6 +248,10 @@ impl epi::App for App {
             });
 
         if *running {
+            // Collapsed windows skip their body, but the simulation must keep advancing.
+            if display.and_then(|response| response.inner).is_none() {
+                world.update();
+            }
             ctx.request_repaint();
         }
     }

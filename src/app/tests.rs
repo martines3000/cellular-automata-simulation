@@ -7,15 +7,15 @@ impl epi::backend::RepaintSignal for NoopRepaint {
     fn request_repaint(&self) {}
 }
 
-struct Harness {
-    app: App,
-    ctx: egui::Context,
+pub(super) struct Harness {
+    pub(super) app: App,
+    pub(super) ctx: egui::Context,
     frame: epi::Frame,
     time: f64,
 }
 
 impl Harness {
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         let ctx = egui::Context::default();
         let frame = epi::Frame::new(epi::backend::FrameData {
             info: epi::IntegrationInfo {
@@ -38,7 +38,7 @@ impl Harness {
         }
     }
 
-    fn input(&mut self, events: Vec<Event>) -> FullOutput {
+    pub(super) fn input(&mut self, events: Vec<Event>) -> FullOutput {
         self.time += 0.1;
         self.ctx.begin_frame(RawInput {
             screen_rect: Some(Rect::from_min_size(pos2(0.0, 0.0), vec2(2000.0, 1200.0))),
@@ -50,7 +50,7 @@ impl Harness {
         self.ctx.end_frame()
     }
 
-    fn canvas(&mut self) -> Rect {
+    pub(super) fn canvas(&mut self) -> Rect {
         let mut output = self.input(vec![]);
         for _ in 0..4 {
             output = self.input(vec![]);
@@ -71,7 +71,7 @@ impl Harness {
             .expect("canvas background")
     }
 
-    fn button(&mut self, pos: Pos2, button: PointerButton, pressed: bool) {
+    pub(super) fn button(&mut self, pos: Pos2, button: PointerButton, pressed: bool) {
         self.input(vec![
             Event::PointerMoved(pos),
             Event::PointerButton {

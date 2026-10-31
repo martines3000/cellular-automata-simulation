@@ -13,6 +13,9 @@ mod wood_tests;
 mod timing_tests;
 
 #[cfg(test)]
+mod app_timing_tests;
+
+#[cfg(test)]
 mod buffer_tests;
 
 #[cfg(test)]

@@ -45,7 +45,8 @@ The Steps/s slider requests 1–360 simulation steps per second. Fractional elap
 time carries across frames. Pause/resume and rate changes start a fresh interval.
 After a long stall, an update runs at most 16 catch-up steps and drops excess
 whole-step debt to keep the UI responsive; achievable speed still depends on the
-machine keeping up.
+machine keeping up. The simulation keeps running when Display is collapsed;
+use Toggle to pause or resume it.
 
 ## Possible improvements
 
