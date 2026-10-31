@@ -17,16 +17,17 @@ pub struct App {
     running: bool,
     world: World,
     shapes: Vec<Shape>,
+    pending_world_size: usize,
 }
 
 impl Default for App {
     fn default() -> Self {
-        let block_size = 1.0;
-        let num_of_blocks = (100.0 / block_size) as usize;
+        let num_of_blocks = 100;
         Self {
             running: false,
             world: World::new(num_of_blocks),
             shapes: Vec::new(),
+            pending_world_size: num_of_blocks,
         }
     }
 }
@@ -50,9 +51,35 @@ impl epi::App for App {
             world,
             running,
             shapes,
+            pending_world_size,
         } = self;
 
         egui::Window::new("Menu").resizable(false).show(ctx, |ui| {
+            ui.add_enabled_ui(!*running, |ui| {
+                ui.horizontal(|ui| {
+                    ui.label("World");
+                    egui::ComboBox::from_id_source("world_size")
+                        .selected_text(format!("{pending_world_size} × {pending_world_size}"))
+                        .show_ui(ui, |ui| {
+                            for size in [100, 256, 512, 1024] {
+                                ui.selectable_value(
+                                    pending_world_size,
+                                    size,
+                                    format!("{size} × {size}"),
+                                );
+                            }
+                        });
+                    if ui
+                        .add_enabled(
+                            *pending_world_size != world.data.nrows(),
+                            Button::new("Resize and clear"),
+                        )
+                        .clicked()
+                    {
+                        world.resize_and_clear(*pending_world_size);
+                    }
+                });
+            });
             if ui
                 .add(
                     Slider::new(&mut world.block_size, 5.0..=30.0)
@@ -106,7 +133,7 @@ impl epi::App for App {
 
             if ui
                 .add(
-                    Slider::new(&mut world.shift.x, 0.0..=100.0)
+                    Slider::new(&mut world.shift.x, 0.0..=world.data.ncols() as f32)
                         .step_by(1.0)
                         .orientation(SliderOrientation::Horizontal)
                         .text("Shift x"),
@@ -118,7 +145,7 @@ impl epi::App for App {
 
             if ui
                 .add(
-                    Slider::new(&mut world.shift.y, 0.0..=100.0)
+                    Slider::new(&mut world.shift.y, 0.0..=world.data.nrows() as f32)
                         .step_by(1.0)
                         .orientation(SliderOrientation::Horizontal)
                         .text("Shift y"),

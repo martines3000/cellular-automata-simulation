@@ -38,6 +38,13 @@ The project targets desktop use. The historical assessment is preserved in
 [review-report.html](review-report.html); current findings and verification are
 tracked in [plans/STATUS.md](plans/STATUS.md).
 
+## Larger worlds
+
+While paused, choose 100, 256, 512 or 1024 cells per side and press **Resize and
+clear** to create an empty bordered world. The action clears both grids, resets pan
+and timing, and preserves brush, block size, rate and generation settings. Block
+size controls zoom; Shift x/y cover the chosen world's full range.
+
 ## Simulation timing
 
 The Steps/s slider requests 1–360 simulation steps per second. Fractional elapsed
@@ -52,11 +59,10 @@ use Toggle to pause or resume it.
 See [PERFORMANCE.md](PERFORMANCE.md) for reproducible larger-world workloads,
 benchmark commands and the distinction between CPU and GPU/frame measurements.
 
-## Possible improvements
+## Next performance work
 
-- use Bevy game engine for rendering
-- use shaders
-- use GPU rendering
+Collect quiet-machine timing comparisons with the supplied workloads, then profile
+native frames before changing the renderer or simulation backend.
 
 ### Info
 

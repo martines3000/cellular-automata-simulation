@@ -174,3 +174,31 @@ fn canvas_reuses_shape_storage_after_submitting_each_frame() {
         assert_eq!(h.app.shapes.capacity(), capacity);
     }
 }
+
+#[test]
+fn canvas_world_resize_requires_paused_confirmation() {
+    let mut h = Harness::new();
+    h.canvas();
+    h.app.pending_world_size = 256;
+    for running in [true, false] {
+        h.app.running = running;
+        let output = h.input(vec![]);
+        let button = output
+            .shapes
+            .iter()
+            .find_map(|shape| match &shape.1 {
+                Shape::Text(text) if text.galley.text() == "Resize and clear" => {
+                    Some(text.pos + text.galley.size() * 0.5)
+                }
+                _ => None,
+            })
+            .expect("Resize and clear button");
+        assert_eq!(h.app.world.data.dim(), (100, 100));
+        h.button(button, PointerButton::Primary, true);
+        h.button(button, PointerButton::Primary, false);
+        let size = if running { 100 } else { 256 };
+        assert_eq!(h.app.world.data.dim(), (size, size));
+    }
+    assert!(h.app.world.data == h.app.world.tmp);
+    assert!(h.app.world.data.iter().all(|cell| cell.mass == 0.0));
+}

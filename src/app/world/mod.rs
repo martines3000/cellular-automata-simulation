@@ -82,24 +82,9 @@ pub struct World {
 
 impl World {
     pub fn new(num_of_blocks: usize) -> Self {
-        let mut _data = Array2::<Cell>::default((num_of_blocks, num_of_blocks));
-        let mut _tmp = Array2::<Cell>::default((num_of_blocks, num_of_blocks));
-
-        /*
-            Fix cell position
-        */
-        for y in 0.._data.dim().0 {
-            for x in 0.._data.dim().1 {
-                _data[[y, x]].x = x;
-                _data[[y, x]].y = y;
-                _tmp[[y, x]].x = x;
-                _tmp[[y, x]].y = y;
-            }
-        }
-
         Self {
-            data: _data,
-            tmp: _tmp,
+            data: Array2::default((num_of_blocks, num_of_blocks)),
+            tmp: Array2::default((num_of_blocks, num_of_blocks)),
             block_size: 5.0,
             pos_shift: vec2(0.0, 0.0),
             shift: vec2(0.0, 0.0),
@@ -141,6 +126,7 @@ impl World {
             .ceil()
             .clamp(0.0, rows as f32) as usize;
         let origin = rect.min + self.pos_shift;
+        let initial_len = shapes.len();
         for y in start_y..end_y {
             for x in start_x..end_x {
                 let cell = &self.data[[y, x]];
@@ -178,7 +164,19 @@ impl World {
                     origin + vec2(self.block_size * (x + 1) as f32, self.block_size * max_y),
                 );
                 if cell_rect.intersect(rect).is_positive() {
-                    shapes.push(Shape::rect_filled(cell_rect, Rounding::none(), color));
+                    let appended = shapes.len() > initial_len;
+                    match shapes.last_mut() {
+                        Some(Shape::Rect(previous))
+                            if appended
+                                && previous.fill == color
+                                && previous.rect.max.x == cell_rect.min.x
+                                && previous.rect.min.y == cell_rect.min.y
+                                && previous.rect.max.y == cell_rect.max.y =>
+                        {
+                            previous.rect.max.x = cell_rect.max.x;
+                        }
+                        _ => shapes.push(Shape::rect_filled(cell_rect, Rounding::none(), color)),
+                    }
                 }
             }
         }
@@ -660,6 +658,21 @@ impl World {
         }
 
         self.add_border();
+    }
+
+    pub fn resize_and_clear(&mut self, size: usize) {
+        assert!(
+            size >= 3,
+            "a bordered simulation needs at least three cells per side"
+        );
+        self.data = Array2::default((size, size));
+        self.tmp = Array2::default((size, size));
+        self.num_of_blocks = size;
+        self.add_border();
+        self.tmp.assign(&self.data);
+        self.shift = vec2(0.0, 0.0);
+        self.update_pos();
+        self.reset_timing();
     }
 
     pub fn update_pos(&mut self) {

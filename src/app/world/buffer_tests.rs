@@ -1,5 +1,14 @@
 use super::*;
 
+#[test]
+fn scratch_large_world_storage_budget() {
+    let bytes = 2 * 1024 * 1024 * std::mem::size_of::<Cell>();
+    assert!(
+        bytes <= 16 * 1024 * 1024,
+        "two 1024² grids need {bytes} bytes"
+    );
+}
+
 fn fixture() -> World {
     let mut world = World::new(7);
     for cell in &mut world.data {

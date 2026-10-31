@@ -90,13 +90,13 @@ fn count(world: &World, material: CellType) -> usize {
         .count()
 }
 
-fn assert_state(world: &World, solids: &[Cell], context: &str) {
-    for cell in &world.data {
+fn assert_state(world: &World, solids: &[((usize, usize), Cell)], context: &str) {
+    for ((y, x), cell) in world.data.indexed_iter() {
         assert!(
             cell.mass.is_finite() && cell.mass >= 0.0,
             "{context}: invalid scalar at ({}, {}): {}",
-            cell.y,
-            cell.x,
+            y,
+            x,
             cell.mass
         );
         if cell.cell_type == CellType::None {
@@ -104,25 +104,22 @@ fn assert_state(world: &World, solids: &[Cell], context: &str) {
                 cell.mass <= MIN_MASS,
                 "{context}: inactive cell holds {} at ({}, {})",
                 cell.mass,
-                cell.y,
-                cell.x
+                y,
+                x
             );
         }
     }
-    for cell in solids {
-        assert!(
-            world.data[[cell.y, cell.x]] == *cell,
-            "{context}: Dirt changed"
-        );
+    for (index, cell) in solids {
+        assert!(world.data[*index] == *cell, "{context}: Dirt changed");
     }
 }
 
 fn checked_tick(world: &mut World, context: &str) {
-    let solids: Vec<Cell> = world
+    let solids: Vec<_> = world
         .data
-        .iter()
-        .filter(|cell| cell.cell_type == CellType::Dirt)
-        .copied()
+        .indexed_iter()
+        .filter(|(_, cell)| cell.cell_type == CellType::Dirt)
+        .map(|(index, cell)| (index, *cell))
         .collect();
     let sand = count(world, CellType::Sand);
     for (phase, update) in [

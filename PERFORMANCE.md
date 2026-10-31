@@ -54,6 +54,14 @@ constant when comparing versions. Repeat runs and report spread; do not gate tes
 on machine-dependent timings. These results cannot establish interactive FPS,
 GPU time or input latency.
 
+## Verified structural changes
+
+Two 1024² cell buffers use 16 MiB instead of 48 MiB, and the dense-basin fixture
+emits 2,557 rectangles instead of 526,334. These are storage/geometry counts,
+not timing improvements. [Exact evidence and limits](reviews/evidence/2026-10-31-scaling.md)
+include the mixed-material regressions. Timed sampling is deferred at the user's
+request; the [sampling plan](plans/planned/local-performance-measurements.md) is ready.
+
 ## Findings and options
 
 [Tool research](reviews/research/2026-10-31-performance-tools.md) compares Divan,

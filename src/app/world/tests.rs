@@ -44,16 +44,16 @@ fn fluid_mass(world: &World) -> f64 {
 }
 
 fn phase(world: &mut World) {
-    let protected: Vec<Cell> = world
+    let protected: Vec<_> = world
         .data
-        .iter()
-        .filter(|cell| !matches!(cell.cell_type, CellType::Water | CellType::None))
-        .copied()
+        .indexed_iter()
+        .filter(|(_, cell)| !matches!(cell.cell_type, CellType::Water | CellType::None))
+        .map(|(index, cell)| (index, *cell))
         .collect();
     world.tmp = world.data.clone();
     world.update_water();
-    for cell in protected {
-        assert!(world.data[[cell.y, cell.x]] == cell);
+    for (index, cell) in protected {
+        assert!(world.data[index] == cell);
     }
     for cell in &world.data {
         assert!(cell.mass.is_finite() && cell.mass >= 0.0);

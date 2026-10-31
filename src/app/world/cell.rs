@@ -15,8 +15,6 @@ pub enum CellType {
 
 #[derive(PartialEq, Clone, Copy)]
 pub struct Cell {
-    pub x: usize,
-    pub y: usize,
     pub cell_type: CellType,
     pub mass: f32,
 }
@@ -40,8 +38,6 @@ impl Cell {
 impl Default for Cell {
     fn default() -> Self {
         Self {
-            x: 0,
-            y: 0,
             cell_type: CellType::None,
             mass: 0.0,
         }

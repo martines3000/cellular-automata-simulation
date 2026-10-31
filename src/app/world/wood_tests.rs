@@ -22,11 +22,11 @@ fn sealed_world() -> World {
 }
 
 fn assert_water_phase(world: &mut World, expected_mass: f64, expected_wood: usize) {
-    let solids: Vec<Cell> = world
+    let solids: Vec<_> = world
         .data
-        .iter()
-        .filter(|cell| cell.cell_type == CellType::Dirt)
-        .copied()
+        .indexed_iter()
+        .filter(|(_, cell)| cell.cell_type == CellType::Dirt)
+        .map(|(index, cell)| (index, *cell))
         .collect();
     world.tmp = world.data.clone();
     world.update_water();
@@ -41,8 +41,8 @@ fn assert_water_phase(world: &mut World, expected_mass: f64, expected_wood: usiz
         .data
         .iter()
         .all(|cell| cell.mass.is_finite() && cell.mass >= 0.0));
-    for cell in solids {
-        assert!(world.data[[cell.y, cell.x]] == cell);
+    for (index, cell) in solids {
+        assert!(world.data[index] == cell);
     }
 }
 
@@ -282,11 +282,11 @@ fn wood_displacement_full_tick_schedule_preserves_closed_fixture() {
     world.data[[2, 3]].cell_type = CellType::Wood;
     world.data[[1, 3]].cell_type = CellType::Water;
     world.data[[1, 3]].mass = 5.0;
-    let solids: Vec<Cell> = world
+    let solids: Vec<_> = world
         .data
-        .iter()
-        .filter(|cell| cell.cell_type == CellType::Dirt)
-        .copied()
+        .indexed_iter()
+        .filter(|(_, cell)| cell.cell_type == CellType::Dirt)
+        .map(|(index, cell)| (index, *cell))
         .collect();
     for _ in 0..32 {
         for update in [
@@ -305,8 +305,8 @@ fn wood_displacement_full_tick_schedule_preserves_closed_fixture() {
             .data
             .iter()
             .all(|cell| cell.mass.is_finite() && cell.mass >= 0.0));
-        for cell in &solids {
-            assert!(world.data[[cell.y, cell.x]] == *cell);
+        for (index, cell) in &solids {
+            assert!(world.data[*index] == *cell);
         }
     }
 }

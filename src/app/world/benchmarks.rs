@@ -26,6 +26,7 @@ fn performance_baseline() {
 #[test]
 #[ignore = "validate benchmark fixtures separately from normal checks"]
 fn performance_fixture_smoke_test() {
+    eprintln!("Cell storage: {} bytes", mem::size_of::<Cell>());
     divan::Divan::default().threads([1]).test_benches();
 }
 
@@ -136,6 +137,7 @@ fn cpu_tick_and_ui(bencher: Bencher, size: usize) {
         .with_inputs(|| {
             let mut harness = Harness::new();
             harness.app.world = fixtures::mixed_world(size, 42, true);
+            harness.app.pending_world_size = size;
             harness.canvas(); // Settle layout outside timing; UI remains paused.
             harness
         })
