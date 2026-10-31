@@ -589,12 +589,10 @@ impl World {
                         }
 
                         for step in SMALL_NEIGHBOURHOOD {
-                            if self.tmp[[y + step.0 as usize, x + step.1 as usize]]
-                                .cell_type
-                                .eq(&CellType::Wood)
-                            {
-                                self.tmp[[y + step.0 as usize, x + step.1 as usize]].cell_type =
-                                    CellType::FireBurn;
+                            let neighbor =
+                                [(y as i32 + step.0) as usize, (x as i32 + step.1) as usize];
+                            if self.tmp[neighbor].cell_type.eq(&CellType::Wood) {
+                                self.tmp[neighbor].cell_type = CellType::FireBurn;
                             }
                         }
                     }

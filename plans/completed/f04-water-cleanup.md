@@ -1,6 +1,6 @@
 # F04: preserve incoming water during cleanup
 
-- Status: complete, implemented and verified in the working tree; uncommitted.
+- Status: complete; committed/pushed as `1d407f1` after user authorization.
 - Owner: Codex, this chat (including all verification).
 - Context: [historical F04](../../review-report.html#F04) and
   [saved probe source](../../reviews/evidence/2026-10-30-rule-probes.rs.txt).
@@ -93,7 +93,7 @@ work. Release only this chat's verification lock; never use git clean.
 
 ## Outcomes and supporting evidence
 
-F04 is resolved in the working tree. Affected code: the small-source cleanup in
+F04 is resolved in commit `1d407f1`. Affected code: the small-source cleanup in
 `src/app/world/mod.rs`, with private test access through `tests.rs`. The exact
 1.0-over-0.005 reproduction now retains exactly 1.0 rather than 0; only the old
 0.005 residue is discarded. Zero-source incoming is preserved. The supported
@@ -110,8 +110,10 @@ artifacts; they do not automatically follow a worktree. Generated Cargo.lock and
 target remain ignored local validation outputs, not proposed commit content.
 
 New planning support: `AGENTS.md`, `PLANS.md`, `plans/TEMPLATE.md`,
-`plans/STATUS.md`, `plans/planned/README.md`, and this completed plan. No commit,
-push, merge or deployment performed. [Status](../STATUS.md) records remaining
+`plans/STATUS.md`, `plans/planned/README.md`, and this completed plan. The user
+subsequently authorized commit/push and continued work: `1d407f1` was pushed to
+`codex/simulation-correctness-fixes`, including all four unchanged historical
+artifacts. No merge or deployment performed. [Status](../STATUS.md) records remaining
 priorities: F10 before public serving; F03 is the next bounded simulation fix;
 F05/F06 and F07/F08 follow. Web delivery F01/F02/F11/F12 requires its own graph,
 toolchain and artifact decision. No further finding was implemented.
