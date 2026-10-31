@@ -6,8 +6,8 @@ Assessment: [review-report.html](../review-report.html#F04).
 ## Verification coordination
 
 - Owner: Codex, this chat; sole editor of `src/app/world/mod.rs`.
-- Active job: none; F09 final verification complete. Shared lock released; no
-  owned simulator/server processes running.
+- Active job: F16/F15 validation complete; preparing F14 buffer regressions. One worktree,
+  no competing verification processes; Codex owns the shared verification lock.
 - Shared lock for cooperating workers:
   `/tmp/cellular-automata-simulation-verification.lock` (directory; owner recorded
   inside). Inspect process inventory before acquiring; never remove another owner's
@@ -47,3 +47,6 @@ findings are retired by removing delivery/server support, not by repairing the
 old browser pipeline. The cleanup pruned five unused packages with no remaining
 version/checksum changes; F09 uses that unchanged graph. Cargo.lock/target stay
 ignored outputs. Completed plans preserve exact commands, graph records and limits.
+
+2026-10-31: all seven native follow-up tasks authorized. Active work and milestones:
+[native polish plan](planned/native-polish.md).

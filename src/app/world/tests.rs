@@ -10,6 +10,24 @@ fn bordered_world() -> World {
     world
 }
 
+#[test]
+fn painting_preserves_border_and_rejects_off_canvas_positions() {
+    let mut world = World::new(20);
+    world.add_border();
+    let rect = Rect::from_min_size(pos2(100.0, 200.0), vec2(20.0, 20.0));
+    let before = world.data.clone();
+    for pos in [
+        None,
+        Some(rect.min),
+        Some(rect.max),
+        Some(rect.max + vec2(5.0, 5.0)),
+        Some(rect.min - vec2(1.0, 1.0)),
+    ] {
+        world.transform_cell(pos, rect);
+        assert!(world.data == before);
+    }
+}
+
 fn water(world: &mut World, y: usize, x: usize, mass: f32) {
     world.data[[y, x]].cell_type = CellType::Water;
     world.data[[y, x]].mass = mass;

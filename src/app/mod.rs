@@ -1,5 +1,8 @@
 mod world;
 
+#[cfg(test)]
+mod tests;
+
 use eframe::{
     egui::{self, Button, Painter, Sense, Slider, SliderOrientation},
     epaint::{vec2, Pos2},
@@ -42,8 +45,6 @@ impl epi::App for App {
 
     fn update(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {
         let Self { world, running } = self;
-
-        ctx.request_repaint();
 
         egui::Window::new("Menu").resizable(false).show(ctx, |ui| {
             if ui
@@ -209,32 +210,23 @@ impl epi::App for App {
                 let rect = painter.clip_rect();
                 let mut shapes = Vec::new();
 
-                if ui
-                    .interact(
-                        rect,
-                        ui.id(),
-                        Sense {
-                            click: true,
-                            drag: true,
-                            focusable: true,
-                        },
+                let response = ui.interact(rect, ui.id(), Sense::click_and_drag());
+                let primary_pressed = ui.input().events.iter().any(|event| {
+                    matches!(
+                        event,
+                        egui::Event::PointerButton {
+                            button: egui::PointerButton::Primary,
+                            pressed: true,
+                            ..
+                        }
                     )
-                    .dragged()
+                });
+                // egui 0.17 starts dragging on press; don't also paint that click on release.
+                if response.dragged_by(egui::PointerButton::Primary)
+                    || (response.clicked() && primary_pressed)
                 {
-                    world.transform_cell(
-                        ui.interact(
-                            ui.clip_rect(),
-                            ui.id(),
-                            Sense {
-                                click: true,
-                                drag: false,
-                                focusable: false,
-                            },
-                        )
-                        .hover_pos(),
-                        rect,
-                    )
-                };
+                    world.transform_cell(response.interact_pointer_pos(), rect);
+                }
 
                 if *running {
                     world.update();
@@ -246,5 +238,9 @@ impl epi::App for App {
 
                 painter.extend(shapes);
             });
+
+        if *running {
+            ctx.request_repaint();
+        }
     }
 }

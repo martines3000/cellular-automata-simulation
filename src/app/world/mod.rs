@@ -679,6 +679,9 @@ impl World {
 
     pub fn transform_cell(&mut self, pointer_pos: Option<Pos2>, clip_rect: Rect) {
         if let Some(pos) = pointer_pos {
+            if !clip_rect.contains(pos) || pos.x >= clip_rect.max.x || pos.y >= clip_rect.max.y {
+                return;
+            }
             let block = self.get_block_pos(pos - pos2(clip_rect.left(), clip_rect.top()));
 
             if self.bounds_valid(block) {
