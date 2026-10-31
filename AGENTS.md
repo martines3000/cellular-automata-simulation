@@ -2,7 +2,7 @@
 
 - Keep fixes local to the selected finding. Trace callers before changing a rule;
   test private phases through a child module. Preserve sand → water → fire → smoke
-  → wood ordering and the production `tmp = data.clone()` phase setup.
+  → wood ordering and copying current `data` into `tmp` before each phase (reuse its allocation).
 - For multi-step work, read [PLANS.md](PLANS.md) and update
   [plans/STATUS.md](plans/STATUS.md). Small, low-risk fixes may use a status checklist.
 - Historical evidence is in [review-report.html](review-report.html), its completed

@@ -12,6 +12,9 @@ mod wood_tests;
 #[cfg(test)]
 mod timing_tests;
 
+#[cfg(test)]
+mod buffer_tests;
+
 use std::{
     mem,
     time::{Duration, Instant},
@@ -225,7 +228,7 @@ impl World {
 
     pub fn smooth(&mut self) {
         // Editing can run between ticks, when tmp contains an older phase.
-        self.tmp = self.data.clone();
+        self.tmp.assign(&self.data);
         let mut sum;
 
         for y in 0..self.tmp.dim().0 as i32 {
@@ -644,22 +647,22 @@ impl World {
 
     fn tick(&mut self) {
         // Sand
-        self.tmp = self.data.clone();
+        self.tmp.assign(&self.data);
         self.update_sand();
 
         // Water
-        self.tmp = self.data.clone();
+        self.tmp.assign(&self.data);
         self.update_water();
 
         // Fire
-        self.tmp = self.data.clone();
+        self.tmp.assign(&self.data);
         self.update_fire();
 
-        self.tmp = self.data.clone();
+        self.tmp.assign(&self.data);
         self.update_smoke();
 
         // Wood
-        self.tmp = self.data.clone();
+        self.tmp.assign(&self.data);
         self.update_wood();
     }
 

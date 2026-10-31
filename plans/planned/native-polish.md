@@ -11,7 +11,7 @@
 
 - [x] F16: one canvas response, single-click/drag painting; input/coordinate regressions.
 - [x] F15: event-driven paused repaint; retain active simulation and interaction.
-- [ ] F14: copy into allocated scratch; equivalence and allocation-identity checks.
+- [x] F14: copy into allocated scratch; equivalence and allocation-identity checks.
 - [ ] F13: skip empty/offscreen shapes; retain water/wood geometry; reuse shape capacity.
 - [ ] Remove six baseline lint diagnostics and make the strict check script pass.
 - [ ] Native UI: actual startup, pause/play, rate, painting, zoom, Clear/Generate/Smooth.
@@ -55,3 +55,10 @@ input-frame tests and a world clipping regression pass. Exact targeted commands:
 `CARGO_BUILD_JOBS=2 cargo +1.95.0 test --lib painting_ -- --test-threads=1`.
 The old egui API has immediate repaint only, so active simulation continues to
 request repaint; paused simulation relies on egui's input-driven repaint.
+
+F16/F15 commit: `18ff7e5`; all 42 tests passed. F14 allocation-identity regression
+failed before assign() reuse, then passed. A 100-tick clone-reference comparison
+passes, including complete data/tmp scalar equality. Tick and Smooth reuse the
+original two buffers. `cargo +1.95.0 test --lib scratch_ -- --test-threads=1`
+(jobs 2): 2 passed. Full all-target/all-feature suite: 44 passed. No throughput
+or wall-clock performance claim; per-cell coordinate removal remains separate.
