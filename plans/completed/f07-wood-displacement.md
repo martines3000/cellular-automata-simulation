@@ -1,7 +1,7 @@
 # F07: preserve water displaced by lifted wood
 
 - Owner: Codex, this chat; sole world editor and verification owner.
-- Status: complete and verified in working tree, 2026-10-31; committing separately.
+- Status: complete, committed/pushed as `7195209` on 2026-10-31.
 - Historical evidence: [F07](../../review-report.html#F07) and saved probe source.
 - Scope: lift_wood preserves current destination fluid in the vacated wood cell.
   Preserve flow/pressure coefficients, schedule and directional preference. F08
@@ -65,5 +65,7 @@ Sequential verification, existing F04 graph and shared lock; jobs 2 / threads 1:
 
 No dependency/web changes; historical evidence unchanged. Six baseline Clippy
 findings remain (latest comparison in F05/F06; next comparison after F08).
-F08 left-side eligibility, zero-flow movement and lateral bias remain open.
+At this commit F08 left-side eligibility, zero-flow movement and lateral bias
+remained open. See [F08](f08-lateral-flow.md) for subsequent resolution and the
+additional falling-wood/passive-water regression.
 Commit identity is recorded in status/history after creation.

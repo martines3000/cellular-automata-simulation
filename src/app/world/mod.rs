@@ -349,16 +349,52 @@ impl World {
         (true, 0)
     }
 
-    fn lift_wood(&mut self, y: usize, x: usize, top: usize) {
-        let displaced_mass = self.tmp[[top, x]].mass;
-        self.tmp[[y, x]].mass += displaced_mass;
-        self.tmp[[y, x]].cell_type = if self.tmp[[y, x]].mass >= MIN_MASS {
+    fn move_wood(&mut self, from: [usize; 2], to: [usize; 2]) {
+        let displaced_mass = self.tmp[to].mass;
+        self.tmp[from].mass += displaced_mass;
+        self.tmp[from].cell_type = if self.tmp[from].mass >= MIN_MASS {
             CellType::Water
         } else {
             CellType::None
         };
-        self.tmp[[top, x]].cell_type = CellType::Wood;
-        self.tmp[[top, x]].mass = 0.0;
+        self.tmp[to].cell_type = CellType::Wood;
+        self.tmp[to].mass = 0.0;
+    }
+
+    fn flow_water_side(&mut self, y: usize, x: usize, direction: i32, available_mass: f32) -> f32 {
+        let nx = (x as i32 + direction) as usize;
+        if !matches!(
+            self.data[[y, nx]].cell_type,
+            CellType::Water | CellType::None | CellType::Wood
+        ) {
+            return 0.0;
+        }
+        let mut flow = (available_mass - self.data[[y, nx]].mass) / 3.0;
+        if flow > MIN_FLOW {
+            flow *= FLOW_SMOOTH;
+        }
+        flow = flow.clamp(0.0, available_mass);
+        if flow <= 0.0 {
+            return 0.0;
+        }
+        if self.tmp[[y, nx]].cell_type == CellType::Wood {
+            let beyond = (nx as i32 + direction) as usize;
+            if self.tmp[[y, beyond]].cell_type == CellType::None {
+                self.move_wood([y, nx], [y, beyond]);
+            } else {
+                let (stuck, top) = self.wood_stuck(y, nx);
+                if stuck {
+                    return 0.0;
+                }
+                self.move_wood([y, nx], [top, nx]);
+            }
+        }
+        self.tmp[[y, x]].mass -= flow;
+        self.tmp[[y, nx]].mass += flow;
+        if self.tmp[[y, nx]].mass > MIN_MASS {
+            self.tmp[[y, nx]].cell_type = CellType::Water;
+        }
+        flow
     }
 
     fn update_sand(&mut self) {
@@ -454,77 +490,10 @@ impl World {
                         || (self.data[[y + 1, x]].cell_type.eq(&CellType::Water)
                             && self.data[[y + 1, x]].mass >= MAX_MASS)
                     {
-                        // Right side
-                        if self.data[[y, x + 1]].cell_type.eq(&CellType::Water)
-                            || self.data[[y, x + 1]].cell_type.eq(&CellType::None)
-                            || self.data[[y, x + 1]].cell_type.eq(&CellType::Wood)
-                        {
-                            flow = (remaining_mass - self.data[[y, x + 1]].mass) / 3.0;
-
-                            if flow > MIN_FLOW {
-                                flow *= FLOW_SMOOTH;
-                            }
-
-                            flow = flow.clamp(0.0, remaining_mass);
-
-                            if flow >= 0.0 && self.tmp[[y, x + 1]].cell_type.eq(&CellType::Wood) {
-                                if self.tmp[[y, x + 2]].cell_type.eq(&CellType::None) {
-                                    self.tmp[[y, x + 2]].cell_type = CellType::Wood;
-                                } else {
-                                    let (stuck, top) = self.wood_stuck(y, x + 1);
-                                    if !stuck {
-                                        self.lift_wood(y, x + 1, top);
-                                    } else {
-                                        continue;
-                                    }
-                                }
-                            }
-
-                            self.tmp[[y, x]].mass -= flow;
-                            self.tmp[[y, x + 1]].mass += flow;
-                            remaining_mass -= flow;
-
-                            if self.tmp[[y, x + 1]].mass > MIN_MASS {
-                                self.tmp[[y, x + 1]].cell_type = CellType::Water;
-                            }
-                        }
-
-                        if remaining_mass < MIN_FLOW {
-                            continue;
-                        }
-
-                        // Left side
-                        if self.data[[y, x - 1]].cell_type.eq(&CellType::Water)
-                            || self.data[[y, x - 1]].cell_type.eq(&CellType::None)
-                        {
-                            flow = (remaining_mass - self.data[[y, x - 1]].mass) / 3.0;
-                            if flow > MIN_FLOW {
-                                flow *= FLOW_SMOOTH;
-                            }
-
-                            flow = flow.clamp(0.0, remaining_mass);
-
-                            if flow > 0.0 && self.tmp[[y, x - 1]].cell_type.eq(&CellType::Wood) {
-                                if self.tmp[[y, x - 2]].cell_type.eq(&CellType::None) {
-                                    self.tmp[[y, x - 2]].cell_type = CellType::Wood;
-                                } else {
-                                    let (stuck, top) = self.wood_stuck(y, x - 1);
-                                    if !stuck {
-                                        self.lift_wood(y, x - 1, top);
-                                    } else {
-                                        continue;
-                                    }
-                                }
-                            }
-
-                            self.tmp[[y, x]].mass -= flow;
-                            self.tmp[[y, x - 1]].mass += flow;
-                            remaining_mass -= flow;
-
-                            if self.tmp[[y, x - 1]].mass > MIN_MASS {
-                                self.tmp[[y, x - 1]].cell_type = CellType::Water;
-                            }
-                        }
+                        // Both sides use the post-downflow quantity, avoiding a right-first bias.
+                        let lateral_mass = remaining_mass;
+                        remaining_mass -= self.flow_water_side(y, x, 1, lateral_mass);
+                        remaining_mass -= self.flow_water_side(y, x, -1, lateral_mass);
                     }
 
                     if remaining_mass < MIN_FLOW {
@@ -540,7 +509,7 @@ impl World {
                             if self.tmp[[y - 1, x]].cell_type.eq(&CellType::Wood) {
                                 let (stuck, top) = self.wood_stuck(y, x);
                                 if !stuck {
-                                    self.lift_wood(y - 1, x, top);
+                                    self.move_wood([y - 1, x], [top, x]);
                                 } else {
                                     continue;
                                 }
@@ -576,8 +545,7 @@ impl World {
             for x in 0..self.tmp.dim().1 {
                 if self.data[[y, x]].cell_type.eq(&CellType::Wood) {
                     if self.data[[y + 1, x]].cell_type.eq(&CellType::None) {
-                        self.tmp[[y, x]].cell_type = CellType::None;
-                        self.tmp[[y + 1, x]].cell_type = CellType::Wood;
+                        self.move_wood([y, x], [y + 1, x]);
                     }
                 }
             }
