@@ -9,10 +9,12 @@ mod edit_state_tests;
 #[cfg(test)]
 mod wood_tests;
 
-use std::{mem, time::Duration};
+use std::{
+    mem,
+    time::{Duration, Instant},
+};
 
 use egui::{pos2, vec2, Color32, Pos2, Rect, Rounding, Shape, Vec2};
-use instant::Instant;
 use ndarray::Array2;
 
 use cell::*;

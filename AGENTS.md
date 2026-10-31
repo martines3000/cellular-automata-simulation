@@ -11,16 +11,17 @@
   Record resolutions separately. Future assessments get new dated filenames.
 - One verification owner records the active job in `plans/STATUS.md`. Before each
   verification session, inspect `git worktree list --porcelain` and running Cargo,
-  Rust, WASM, simulator and benchmark processes. Serialize checks across worktrees
+  Rust, simulator and benchmark processes. Serialize checks across worktrees
   and coordinate other workloads; use the shared lock recorded in status.
 - Start with `CARGO_BUILD_JOBS=2` and `--test-threads=1`. For F04 use installed
   Rust 1.95.0: debug/release `cargo +1.95.0 test --lib water_cleanup`, then native
   check, all-target/all-feature tests, doc tests and formatting. Exact commands
   and outcomes belong in the implementation plan. Strict Clippy has historical
   failures; distinguish new diagnostics from that baseline.
-- Keep dependency/toolchain changes separate. Record the validation graph: the
-  ignored Cargo.lock is not project policy. Web setup scripts update dependencies
-  and build scripts write `docs/`; run them only for an authorized web task.
+- The application targets native desktop use. Browser delivery was removed at the
+  user's request; historical review records still describe the old web baseline.
+  Keep dependency upgrades separate and record the validation graph: the ignored
+  Cargo.lock is not project policy.
 - Preserve unrelated edits; never use `git clean`. Keep evidence compact and omit
   binaries, targets, caches, generated WASM, credentials and private runtime data.
   Before a commit, explicitly inventory untracked review/planning files and verify
