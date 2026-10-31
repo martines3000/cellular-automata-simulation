@@ -3,6 +3,9 @@ pub mod cell;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod edit_state_tests;
+
 use std::{mem, time::Duration};
 
 use egui::{pos2, vec2, Color32, Pos2, Rect, Rounding, Shape, Vec2};
@@ -204,6 +207,7 @@ impl World {
     pub fn rand_generate(&mut self) {
         let mut rng = thread_rng();
         for cell in &mut self.data {
+            cell.mass = 0.0;
             cell.cell_type = if rng.gen::<f32>() < self.threshold {
                 CellType::Dirt
             } else {
@@ -214,6 +218,8 @@ impl World {
     }
 
     pub fn smooth(&mut self) {
+        // Editing can run between ticks, when tmp contains an older phase.
+        self.tmp = self.data.clone();
         let mut sum;
 
         for y in 0..self.tmp.dim().0 as i32 {

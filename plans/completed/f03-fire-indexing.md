@@ -1,6 +1,6 @@
 # F03: signed fire-neighbor indexing
 
-- Status: complete and verified in working tree; committing separately.
+- Status: complete, committed/pushed as `b99b9de`.
 - Owner: Codex, this chat; sole editor of the world module and verification owner.
 - Authorization: user requested a fresh branch, commit/push, and continued work
   on 2026-10-30. F04 is committed/pushed as `1d407f1`; F03 is the next bounded
