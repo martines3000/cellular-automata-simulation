@@ -13,7 +13,7 @@
 - [x] F15: event-driven paused repaint; retain active simulation and interaction.
 - [x] F14: copy into allocated scratch; equivalence and allocation-identity checks.
 - [x] F13: skip empty/offscreen shapes; retain water/wood geometry; reuse shape capacity.
-- [ ] Remove six baseline lint diagnostics and make the strict check script pass.
+- [x] Remove six baseline lint diagnostics and make the strict check script pass.
 - [ ] Native UI: actual startup, pause/play, rate, painting, zoom, Clear/Generate/Smooth.
 - [ ] Pin installed Rust 1.95.0, track the current native Cargo.lock, add native CI.
 - [ ] Final sequential checks, unchanged historical hashes, clean commits/push.
@@ -70,3 +70,8 @@ edges and invalid viewport inputs covered. egui 0.17 consumes Vec in extend(), s
 submit drained shapes via Painter::add to retain App capacity. No FPS claim.
 Validation: `cargo +1.95.0 test --workspace --all-targets --all-features -- --test-threads=1`
 with jobs 2, and `cargo +1.95.0 fmt --all -- --check`.
+
+Lint cleanup: redundant field, needless returns, identical Smooth branches and
+nested wood condition simplified without changing rules. Renderer already removed
+the unnecessary cast. Strict all-target/all-feature Clippy now passes with
+`-D warnings -W clippy::all`; all 50 tests and desktop binary build pass.

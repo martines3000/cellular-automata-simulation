@@ -94,7 +94,7 @@ impl World {
             steps_per_second: 60,
             threshold: 0.5,
             step_credit: 0,
-            num_of_blocks: num_of_blocks,
+            num_of_blocks,
             last_frame_time: Instant::now(),
             selected_cell_type: CellType::Water,
             rng: thread_rng(),
@@ -173,14 +173,10 @@ impl World {
     }
 
     pub fn bounds_valid(&self, block: Vec2) -> bool {
-        if (block.x as i32) > 0
+        (block.x as i32) > 0
             && (block.x as usize) < self.num_of_blocks - 1
             && (block.y as i32) > 0
             && (block.y as usize) < self.num_of_blocks - 1
-        {
-            return true;
-        }
-        return false;
     }
 
     pub fn add_border(&mut self) {
@@ -235,10 +231,8 @@ impl World {
                         || x + step.1 < 0
                         || y + step.0 == self.tmp.dim().0 as i32
                         || x + step.1 == self.tmp.dim().1 as i32
-                    {
-                        sum += 1;
-                    } else if self.data[[(y + step.0) as usize, (x + step.1) as usize]].cell_type
-                        == CellType::Dirt
+                        || self.data[[(y + step.0) as usize, (x + step.1) as usize]].cell_type
+                            == CellType::Dirt
                     {
                         sum += 1;
                     }
@@ -533,10 +527,10 @@ impl World {
     fn update_wood(&mut self) {
         for y in 0..self.tmp.dim().0 {
             for x in 0..self.tmp.dim().1 {
-                if self.data[[y, x]].cell_type.eq(&CellType::Wood) {
-                    if self.data[[y + 1, x]].cell_type.eq(&CellType::None) {
-                        self.move_wood([y, x], [y + 1, x]);
-                    }
+                if self.data[[y, x]].cell_type.eq(&CellType::Wood)
+                    && self.data[[y + 1, x]].cell_type.eq(&CellType::None)
+                {
+                    self.move_wood([y, x], [y + 1, x]);
                 }
             }
         }
@@ -694,6 +688,6 @@ impl World {
     }
 
     fn get_block_pos(&self, pos: Vec2) -> Vec2 {
-        return ((pos - self.pos_shift) / self.block_size).floor();
+        ((pos - self.pos_shift) / self.block_size).floor()
     }
 }
