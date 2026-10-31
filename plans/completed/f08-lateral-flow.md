@@ -1,7 +1,7 @@
 # F08: consistent lateral water/wood rules
 
 - Owner: Codex, this chat; sole world editor and verification owner.
-- Status: complete and verified in working tree, 2026-10-31; committing separately.
+- Status: complete, committed/pushed as `01b4340` on 2026-10-31.
 - Evidence: [F08](../../review-report.html#F08), including the saved 10-unit
   symmetric basin result (left 1.875, right 2.5) and left-side wood exclusion.
 - Scope: compute both lateral flows from the same available source quantity,
@@ -81,4 +81,4 @@ browser/GUI/cross-platform/performance claim. Reflection is tested for isolated
 supported sources, not promised for arbitrary multi-source scan order. The mass
 matrix covers 6,561 representative finite states, not all possible f32/world
 states. Invalid externally modified borders and nonfinite input are outside this
-work's valid-world contract. Commit identity follows in status/history.
+work's valid-world contract. Commit: `01b4340`, pushed to `codex/simulation-correctness-fixes`.
