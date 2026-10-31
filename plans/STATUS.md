@@ -6,8 +6,8 @@ Assessment: [review-report.html](../review-report.html#F04).
 ## Verification coordination
 
 - Owner: Codex, this chat; sole editor of `src/app/world/mod.rs`.
-- Active job: none; local checks complete, owned native process stopped.
-  One worktree; shared verification lock released after final checks.
+- Active job: none. Display visibility fix verified locally; shared lock released.
+  One worktree, no owned compiler/UI verification processes.
 - Shared lock for cooperating workers:
   `/tmp/cellular-automata-simulation-verification.lock` (directory; owner recorded
   inside). Inspect process inventory before acquiring; never remove another owner's
@@ -29,6 +29,7 @@ Assessment: [review-report.html](../review-report.html#F04).
 | Committed/pushed | F16 input / F15 repaint | `18ff7e5`; primary clicks/dragging, coalesced click handling and idle paused frames; real egui input regressions. [Native follow-up plan](completed/native-polish.md). |
 | Committed/pushed | F14 scratch reuse | `64651d4`; original two allocations retained; 100-tick equality against clone reference. |
 | Committed/pushed | F13 rendering | `3913e5f`; visible-cell culling, empty-cell omission and shape capacity reuse, geometry regressions. |
+| Committed | Display visibility/timing | `d68114d`; collapsed Display keeps active simulation advancing; preserves pause and paint/update order. [Completed plan](completed/display-visibility.md). |
 
 The user's 2026-10-30 follow-up authorized committing/pushing on a fresh branch
 and continuing work; on 2026-10-31 the user requested edge-case regressions.
@@ -37,7 +38,7 @@ in completed plans. F04's four historical evidence files are now tracked unchang
 
 Latest local verification (2026-10-31): `bash check.sh` passes using pinned Rust
 1.95.0 and the committed native Cargo.lock: check/build, fmt, strict Clippy (zero
-diagnostics), 50 all-target/all-feature debug tests, 0 doc tests and 50 release
+diagnostics), 53 all-target/all-feature debug tests, 0 doc tests and 53 release
 all-feature tests. Mechanical lint cleanup: `3a32a09`. Native UI results/limits:
 `611c83b`; macOS startup, painting, zoom, rate, play/pause, Clear/Generate/Smooth
 observed. Automated native dragging was unreliable; headless RawInput tests cover
@@ -53,8 +54,13 @@ warning. Dependency migration remains separate. Browser delivery was removed
 
 All sixteen historical findings are implemented or retired by browser removal.
 Historical reports and extracted evidence remain byte-for-byte unchanged. Counts
-in earlier rows describe those commits; current suite contains 50 tests.
+in earlier rows describe those commits; current suite contains 53 tests.
 
 [Completed native follow-up](completed/native-polish.md) records decisions,
 commands, evidence and limits. Future work is separate: dependency compatibility,
 Windows validation, controlled frame profiling and any engine/rendering redesign.
+
+2026-10-31 follow-up: [Display visibility/timing](completed/display-visibility.md)
+reproduced before the fix and passed after it. Three new regressions cover
+collapse/reopen, unchanged paused frames and painting before ticking. Local-only
+`bash check.sh` passes all 53 tests in debug/release plus strict Clippy.
