@@ -159,3 +159,18 @@ fn paused_app_stops_requesting_repaints_after_settling() {
     }
     assert!(!h.input(vec![]).needs_repaint);
 }
+
+#[test]
+fn canvas_reuses_shape_storage_after_submitting_each_frame() {
+    let mut h = Harness::new();
+    h.canvas();
+    let pointer = h.app.shapes.as_ptr();
+    let capacity = h.app.shapes.capacity();
+    assert!(capacity > 0);
+    for _ in 0..5 {
+        h.input(vec![]);
+        assert!(h.app.shapes.is_empty());
+        assert_eq!(h.app.shapes.as_ptr(), pointer);
+        assert_eq!(h.app.shapes.capacity(), capacity);
+    }
+}

@@ -16,6 +16,7 @@ use world::World;
 pub struct App {
     running: bool,
     world: World,
+    shapes: Vec<Shape>,
 }
 
 impl Default for App {
@@ -25,6 +26,7 @@ impl Default for App {
         Self {
             running: false,
             world: World::new(num_of_blocks),
+            shapes: Vec::new(),
         }
     }
 }
@@ -44,7 +46,11 @@ impl epi::App for App {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {
-        let Self { world, running } = self;
+        let Self {
+            world,
+            running,
+            shapes,
+        } = self;
 
         egui::Window::new("Menu").resizable(false).show(ctx, |ui| {
             if ui
@@ -208,7 +214,7 @@ impl epi::App for App {
 
                 ui.expand_to_include_rect(painter.clip_rect());
                 let rect = painter.clip_rect();
-                let mut shapes = Vec::new();
+                shapes.clear();
 
                 let response = ui.interact(rect, ui.id(), Sense::click_and_drag());
                 let primary_pressed = ui.input().events.iter().any(|event| {
@@ -234,9 +240,11 @@ impl epi::App for App {
 
                 shapes.push(Shape::rect_filled(rect, Rounding::none(), Color32::WHITE));
 
-                world.gen_shapes(&mut shapes, rect);
+                world.gen_shapes(shapes, rect);
 
-                painter.extend(shapes);
+                for shape in shapes.drain(..) {
+                    painter.add(shape);
+                }
             });
 
         if *running {

@@ -12,7 +12,7 @@
 - [x] F16: one canvas response, single-click/drag painting; input/coordinate regressions.
 - [x] F15: event-driven paused repaint; retain active simulation and interaction.
 - [x] F14: copy into allocated scratch; equivalence and allocation-identity checks.
-- [ ] F13: skip empty/offscreen shapes; retain water/wood geometry; reuse shape capacity.
+- [x] F13: skip empty/offscreen shapes; retain water/wood geometry; reuse shape capacity.
 - [ ] Remove six baseline lint diagnostics and make the strict check script pass.
 - [ ] Native UI: actual startup, pause/play, rate, painting, zoom, Clear/Generate/Smooth.
 - [ ] Pin installed Rust 1.95.0, track the current native Cargo.lock, add native CI.
@@ -62,3 +62,11 @@ passes, including complete data/tmp scalar equality. Tick and Smooth reuse the
 original two buffers. `cargo +1.95.0 test --lib scratch_ -- --test-threads=1`
 (jobs 2): 2 passed. Full all-target/all-feature suite: 44 passed. No throughput
 or wall-clock performance claim; per-cell coordinate removal remains separate.
+
+F13: five geometry regressions plus shape-storage reuse pass; full suite 50 passed.
+Empty 100×100 world: zero cell shapes (previously 10,000). Visible solid fixture:
+12 aligned / 20 fractionally panned cells. Water/wood surface geometry, viewport
+edges and invalid viewport inputs covered. egui 0.17 consumes Vec in extend(), so
+submit drained shapes via Painter::add to retain App capacity. No FPS claim.
+Validation: `cargo +1.95.0 test --workspace --all-targets --all-features -- --test-threads=1`
+with jobs 2, and `cargo +1.95.0 fmt --all -- --check`.

@@ -15,6 +15,9 @@ mod timing_tests;
 #[cfg(test)]
 mod buffer_tests;
 
+#[cfg(test)]
+mod render_tests;
+
 use std::{
     mem,
     time::{Duration, Instant},
@@ -104,85 +107,66 @@ impl World {
     }
 
     pub fn gen_shapes(&self, shapes: &mut Vec<Shape>, rect: Rect) {
-        for y in 0..self.data.dim().0 {
-            for x in 0..self.data.dim().1 {
-                // Water
-                if self.data[[y, x]].cell_type.eq(&CellType::Water)
-                    || (y > 0
-                        && self.data[[y - 1, x]].cell_type.eq(&CellType::Water)
-                        && self.data[[y, x]].cell_type.eq(&CellType::None))
+        if !rect.is_finite()
+            || !rect.is_positive()
+            || !self.pos_shift.is_finite()
+            || !self.block_size.is_finite()
+            || self.block_size <= 0.0
+        {
+            return;
+        }
+        let (rows, cols) = self.data.dim();
+        let start_x = (-self.pos_shift.x / self.block_size)
+            .floor()
+            .clamp(0.0, cols as f32) as usize;
+        let end_x = ((rect.width() - self.pos_shift.x) / self.block_size)
+            .ceil()
+            .clamp(0.0, cols as f32) as usize;
+        // Shifted wood can extend one cell below its nominal row.
+        let start_y =
+            ((-self.pos_shift.y / self.block_size).floor() - 1.0).clamp(0.0, rows as f32) as usize;
+        let end_y = ((rect.height() - self.pos_shift.y) / self.block_size)
+            .ceil()
+            .clamp(0.0, rows as f32) as usize;
+        let origin = rect.min + self.pos_shift;
+        for y in start_y..end_y {
+            for x in start_x..end_x {
+                let cell = &self.data[[y, x]];
+                let above_water = y > 0 && self.data[[y - 1, x]].cell_type == CellType::Water;
+                let mut min_y = y as f32;
+                let mut max_y = min_y + 1.0;
+                let color = if cell.cell_type == CellType::Water
+                    || (cell.cell_type == CellType::None && above_water)
                 {
-                    if self.data[[y, x]].mass > MIN_DRAW {
-                        let shift = if !self.use_shift
-                            || self.data[[y - 1, x]].cell_type.eq(&CellType::Water)
-                        {
-                            0.0
-                        } else {
-                            (1.0 - (self.data[[y, x]].mass / MAX_MASS)).clamp(0.0, 1.0)
-                        };
-
-                        shapes.push(Shape::rect_filled(
-                            Rect {
-                                min: rect.min
-                                    + vec2(
-                                        self.block_size * x as f32,
-                                        self.block_size * (shift + y as f32),
-                                    )
-                                    + self.pos_shift,
-                                max: rect.min
-                                    + vec2(
-                                        self.block_size * (x + 1) as f32,
-                                        self.block_size * (y + 1) as f32,
-                                    )
-                                    + self.pos_shift,
-                            },
-                            Rounding::none(),
-                            Color32::BLUE,
-                        ));
-                    }
-                } else if self.data[[y, x]].cell_type.eq(&CellType::Wood)
-                    && self.data[[y + 1, x]].cell_type.eq(&CellType::Water)
-                {
-                    let shift = if self.use_shift {
-                        (1.0 - (self.data[[y + 1, x]].mass / MAX_MASS)).clamp(0.0, 1.0)
+                    if cell.mass > MIN_DRAW {
+                        if self.use_shift && !above_water {
+                            min_y += (1.0 - cell.mass / MAX_MASS).clamp(0.0, 1.0);
+                        }
+                        Color32::BLUE
                     } else {
-                        0.0
-                    };
-
-                    shapes.push(Shape::rect_filled(
-                        Rect {
-                            min: rect.min
-                                + vec2(
-                                    self.block_size * x as f32,
-                                    self.block_size * (shift + y as f32),
-                                )
-                                + self.pos_shift,
-                            max: rect.min
-                                + vec2(
-                                    self.block_size * (x + 1) as f32,
-                                    self.block_size * (shift + (y + 1) as f32) as f32,
-                                )
-                                + self.pos_shift,
-                        },
-                        Rounding::none(),
-                        Color32::BROWN,
-                    ));
+                        continue;
+                    }
+                } else if cell.cell_type == CellType::Wood
+                    && y + 1 < rows
+                    && self.data[[y + 1, x]].cell_type == CellType::Water
+                {
+                    if self.use_shift {
+                        let shift = (1.0 - self.data[[y + 1, x]].mass / MAX_MASS).clamp(0.0, 1.0);
+                        min_y += shift;
+                        max_y += shift;
+                    }
+                    Color32::BROWN
+                } else if cell.cell_type == CellType::None {
+                    continue;
                 } else {
-                    shapes.push(Shape::rect_filled(
-                        Rect {
-                            min: rect.min
-                                + vec2(self.block_size * x as f32, self.block_size * y as f32)
-                                + self.pos_shift,
-                            max: rect.min
-                                + vec2(
-                                    self.block_size * (x + 1) as f32,
-                                    self.block_size * (y + 1) as f32,
-                                )
-                                + self.pos_shift,
-                        },
-                        Rounding::none(),
-                        self.data[[y, x]].color(),
-                    ));
+                    cell.color()
+                };
+                let cell_rect = Rect::from_min_max(
+                    origin + vec2(self.block_size * x as f32, self.block_size * min_y),
+                    origin + vec2(self.block_size * (x + 1) as f32, self.block_size * max_y),
+                );
+                if cell_rect.intersect(rect).is_positive() {
+                    shapes.push(Shape::rect_filled(cell_rect, Rounding::none(), color));
                 }
             }
         }
