@@ -1,10 +1,11 @@
-# Native interaction, rendering and reproducible validation
+# Native interaction, rendering and reproducible local validation
 
 - Owner: Codex, this chat; one editor/verification owner.
 - Authorized: all seven proposed next tasks, 2026-10-31. Starting at `faceeff`
   on `codex/simulation-correctness-fixes`, clean checkout, one worktree.
 - Scope: F16 clicks/dragging, F15 paused redraw, F14 scratch reuse, F13 rendering,
-  six existing Clippy diagnostics, actual native UI validation, native lock/toolchain/CI.
+  six existing Clippy diagnostics, actual native UI validation and native
+  lock/toolchain policy. CI removed by subsequent user instruction.
   No new simulation features or dependency upgrades; preserve historical evidence.
 
 ## Progress
@@ -15,8 +16,8 @@
 - [x] F13: skip empty/offscreen shapes; retain water/wood geometry; reuse shape capacity.
 - [x] Remove six baseline lint diagnostics and make the strict check script pass.
 - [x] Native UI: actual startup, pause/play, rate, painting, zoom, Clear/Generate/Smooth.
-- [ ] Pin installed Rust 1.95.0, track the current native Cargo.lock, add native CI.
-- [ ] Final sequential checks, unchanged historical hashes, clean commits/push.
+- [x] Pin installed Rust 1.95.0 and track the current native Cargo.lock; local-only checks.
+- [x] Final sequential checks and unchanged historical hashes; commit/push closure records.
 
 ## Decisions and validation
 
@@ -27,9 +28,10 @@ including shifted water/wood. No speedup/battery claims without controlled runti
 measurements; shape counts and allocation reuse are structural evidence.
 
 Use the existing native lock graph; record its SHA and avoid upgrades. Rust 1.95.0
-is already installed. A native application should commit its resolution. CI uses
-locked builds/checks and the same toolchain. Start with macOS/Linux native jobs;
-record which platforms actually ran locally/remotely rather than infer success.
+is already installed. A native application should commit its resolution. Local
+checks use locked builds and the same toolchain. CI was initially added,
+then cancelled, disabled and removed when the user requested local-only testing.
+Record actual platform validation rather than infer success.
 
 Before verification inspect worktrees/processes, acquire the shared directory lock
 from STATUS, use jobs 2 / test threads 1, and run checks/UI measurements serially.
@@ -89,11 +91,21 @@ Owned application stopped before resuming compiler checks.
 Build policy: track the existing 325-package native lock graph unchanged, SHA256
 `1253e4b644402f3ae38bc0193886c1995e7d148384ff9dd8d69ac887fd7e3098`.
 Pin already installed Rust 1.95.0, use --locked in checks; no version upgrades.
-CI: Ubuntu 24.04/macOS 15, one matrix job at a time, jobs 2/test threads 1.
-Checkout v6 SHA verified with official actions/checkout git tag on 2026-10-31.
-Linux packages adapted from [egui 0.17 CI](https://raw.githubusercontent.com/emilk/egui/0.17.0/.github/workflows/rust.yml)
-without unrelated speech/GTK example dependencies. Remote results pending.
+CI was briefly added in `af94baf`, then superseded by the user's local-only
+instruction. Run 41194399117: Ubuntu job passed the full script (50 debug / 50
+release); macOS job confirmed cancelled, workflow confirmed disabled_manually,
+then its configuration removed.
+Linux emitted an existing quick-xml 0.22.0 future-compatibility warning; dependency
+migration remains separate. No further Actions runs are needed or authorized.
 
 Local pinned/locked `bash check.sh`: PASS (check, binary build, fmt, strict
 Clippy, 50 debug/all-feature tests, 0 doc tests, 50 release/all-feature tests).
-Shell syntax and diff whitespace checks pass. Remote CI queued after push.
+Shell syntax and diff whitespace checks pass. Exact commands are in check.sh;
+CARGO_BUILD_JOBS=2 and test threads 1 throughout. No source changes followed this
+verification; closure/CI removal is documentation/configuration only.
+
+Closure: F16/F15 `18ff7e5`, F14 `64651d4`, F13 `3913e5f`, lint `3a32a09`, UI
+validation `611c83b`, pinned builds `af94baf`. All four historical evidence files
+compare byte-for-byte with `1d407f1`; all planning/evidence files are tracked and
+not ignored. Temporary app wrapper removed; owned native process stopped. No
+unrelated working tree edits were present. Recovery/limits above remain valid.

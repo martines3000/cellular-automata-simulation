@@ -30,9 +30,10 @@ Run all native checks and debug/release regressions sequentially:
 bash check.sh
 ```
 
-Native CI checks Ubuntu 24.04 and macOS 15; graphical interaction is validated
-separately on macOS. Windows execution has not been validated. Dependency updates
-should deliberately refresh Cargo.lock and rerun checks.
+Verification runs locally with `bash check.sh`; there are no GitHub Actions
+workflows. Graphical interaction was checked on macOS. Windows execution has not
+been validated. Dependency updates should deliberately refresh Cargo.lock and
+rerun local checks.
 
 The project targets desktop use. The historical assessment is preserved in
 [review-report.html](review-report.html); current findings and verification are
