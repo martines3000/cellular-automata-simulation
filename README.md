@@ -9,17 +9,30 @@
 
 ## Run natively
 
-With Rust and the platform's graphics/linker dependencies installed:
+Install Rust with rustup and the platform's graphics/linker dependencies. The
+repository pins Rust 1.95.0 (including Clippy/rustfmt) and commits Cargo.lock;
+Cargo uses this toolchain automatically. On macOS install Xcode Command Line Tools.
+On Ubuntu 24.04 install:
 
 ```sh
-cargo run --release --bin vaja_2
+sudo apt-get install pkg-config libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libssl-dev libgl1-mesa-dev
 ```
 
-Run the headless regression suite with:
+Run the desktop application:
 
 ```sh
-CARGO_BUILD_JOBS=2 cargo +1.95.0 test --workspace --all-targets --all-features -- --test-threads=1
+cargo run --locked --release --bin vaja_2
 ```
+
+Run all native checks and debug/release regressions sequentially:
+
+```sh
+bash check.sh
+```
+
+Native CI checks Ubuntu 24.04 and macOS 15; graphical interaction is validated
+separately on macOS. Windows execution has not been validated. Dependency updates
+should deliberately refresh Cargo.lock and rerun checks.
 
 The project targets desktop use. The historical assessment is preserved in
 [review-report.html](review-report.html); current findings and verification are

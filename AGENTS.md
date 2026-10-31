@@ -13,15 +13,12 @@
   verification session, inspect `git worktree list --porcelain` and running Cargo,
   Rust, simulator and benchmark processes. Serialize checks across worktrees
   and coordinate other workloads; use the shared lock recorded in status.
-- Start with `CARGO_BUILD_JOBS=2` and `--test-threads=1`. For F04 use installed
-  Rust 1.95.0: debug/release `cargo +1.95.0 test --lib water_cleanup`, then native
-  check, all-target/all-feature tests, doc tests and formatting. Exact commands
-  and outcomes belong in the implementation plan. Strict Clippy has historical
-  failures; distinguish new diagnostics from that baseline.
-- The application targets native desktop use. Browser delivery was removed at the
-  user's request; historical review records still describe the old web baseline.
-  Keep dependency upgrades separate and record the validation graph: the ignored
-  Cargo.lock is not project policy.
+- Run `bash check.sh` for native check/build, formatting, strict Clippy, debug/release
+  tests and doc tests. It uses jobs 2 and test threads 1. Keep verification serial;
+  record exact results and platform limits in the active plan.
+- Native desktop builds use the committed Cargo.lock and rust-toolchain.toml.
+  Use `--locked`; dependency/toolchain upgrades are separate tasks. Browser delivery
+  was removed; historical review records describe the previous web baseline.
 - Preserve unrelated edits; never use `git clean`. Keep evidence compact and omit
   binaries, targets, caches, generated WASM, credentials and private runtime data.
   Before a commit, explicitly inventory untracked review/planning files and verify

@@ -85,3 +85,15 @@ drag automation did not move reliably (also failed to move window titles), so
 drag correctness relies on deterministic RawInput tests; no runtime drag or FPS
 claim. Screenshots remained tool output; no binary/private runtime data tracked.
 Owned application stopped before resuming compiler checks.
+
+Build policy: track the existing 325-package native lock graph unchanged, SHA256
+`1253e4b644402f3ae38bc0193886c1995e7d148384ff9dd8d69ac887fd7e3098`.
+Pin already installed Rust 1.95.0, use --locked in checks; no version upgrades.
+CI: Ubuntu 24.04/macOS 15, one matrix job at a time, jobs 2/test threads 1.
+Checkout v6 SHA verified with official actions/checkout git tag on 2026-10-31.
+Linux packages adapted from [egui 0.17 CI](https://raw.githubusercontent.com/emilk/egui/0.17.0/.github/workflows/rust.yml)
+without unrelated speech/GTK example dependencies. Remote results pending.
+
+Local pinned/locked `bash check.sh`: PASS (check, binary build, fmt, strict
+Clippy, 50 debug/all-feature tests, 0 doc tests, 50 release/all-feature tests).
+Shell syntax and diff whitespace checks pass. Remote CI queued after push.
