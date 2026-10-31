@@ -6,8 +6,9 @@ Assessment: [review-report.html](../review-report.html#F04).
 ## Verification coordination
 
 - Owner: Codex, this chat; sole editor of `src/app/world/mod.rs`.
-- Active job: none. Local checks/setup complete, owned native process stopped,
-  shared lock released. Timed sampling deferred at the user's explicit request.
+- Active job: none. Release build passed; user testing ended at the user's request.
+  Process inventory confirms no simulator is running; shared build lock released.
+  Timed sampling remains deferred at the user's explicit request.
 - Shared lock for cooperating workers:
   `/tmp/cellular-automata-simulation-verification.lock` (directory; owner recorded
   inside). Inspect process inventory before acquiring; never remove another owner's
