@@ -6,8 +6,8 @@ Assessment: [review-report.html](../review-report.html#F04).
 ## Verification coordination
 
 - Owner: Codex, this chat; sole editor of `src/app/world/mod.rs`.
-- Active job: none. Display visibility fix verified locally; shared lock released.
-  One worktree, no owned compiler/UI verification processes.
+- Active job: mixed-material/scaling correctness tests, then local performance
+  measurements; Codex owns the shared lock. One worktree, no competing jobs.
 - Shared lock for cooperating workers:
   `/tmp/cellular-automata-simulation-verification.lock` (directory; owner recorded
   inside). Inspect process inventory before acquiring; never remove another owner's
@@ -58,9 +58,13 @@ in earlier rows describe those commits; current suite contains 53 tests.
 
 [Completed native follow-up](completed/native-polish.md) records decisions,
 commands, evidence and limits. Future work is separate: dependency compatibility,
-Windows validation, controlled frame profiling and any engine/rendering redesign.
+controlled frame profiling and any engine/rendering redesign. Windows support
+is outside the backlog at the user's request.
 
 2026-10-31 follow-up: [Display visibility/timing](completed/display-visibility.md)
 reproduced before the fix and passed after it. Three new regressions cover
 collapse/reopen, unchanged paused frames and painting before ticking. Local-only
 `bash check.sh` passes all 53 tests in debug/release plus strict Clippy.
+
+Active plan: [Mixed materials and local scaling](planned/mixed-material-performance.md).
+Windows removed from future work; all validation remains local-only.

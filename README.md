@@ -31,9 +31,8 @@ bash check.sh
 ```
 
 Verification runs locally with `bash check.sh`; there are no GitHub Actions
-workflows. Graphical interaction was checked on macOS. Windows execution has not
-been validated. Dependency updates should deliberately refresh Cargo.lock and
-rerun local checks.
+workflows. Graphical interaction was checked on macOS. Dependency updates should
+deliberately refresh Cargo.lock and rerun local checks.
 
 The project targets desktop use. The historical assessment is preserved in
 [review-report.html](review-report.html); current findings and verification are
@@ -47,6 +46,11 @@ After a long stall, an update runs at most 16 catch-up steps and drops excess
 whole-step debt to keep the UI responsive; achievable speed still depends on the
 machine keeping up. The simulation keeps running when Display is collapsed;
 use Toggle to pause or resume it.
+
+## Local profiling
+
+See [PERFORMANCE.md](PERFORMANCE.md) for reproducible larger-world workloads,
+benchmark commands and the distinction between CPU and GPU/frame measurements.
 
 ## Possible improvements
 

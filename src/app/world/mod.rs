@@ -21,6 +21,15 @@ mod buffer_tests;
 #[cfg(test)]
 mod render_tests;
 
+#[cfg(test)]
+mod fixtures;
+
+#[cfg(test)]
+mod mixed_tests;
+
+#[cfg(test)]
+mod benchmarks;
+
 use std::{
     mem,
     time::{Duration, Instant},
@@ -30,7 +39,7 @@ use egui::{pos2, vec2, Color32, Pos2, Rect, Rounding, Shape, Vec2};
 use ndarray::Array2;
 
 use cell::*;
-use rand::{prelude::ThreadRng, thread_rng, Rng};
+use rand::{rngs::StdRng, Rng, SeedableRng};
 
 const MIN_FLOW: f32 = 0.5;
 const MAX_FLOW: f32 = 3.0;
@@ -68,7 +77,7 @@ pub struct World {
     step_credit: u128,
     num_of_blocks: usize,
     last_frame_time: Instant,
-    rng: ThreadRng,
+    rng: StdRng,
 }
 
 impl World {
@@ -100,7 +109,7 @@ impl World {
             num_of_blocks,
             last_frame_time: Instant::now(),
             selected_cell_type: CellType::Water,
-            rng: thread_rng(),
+            rng: StdRng::from_entropy(),
             use_shift: false,
         }
     }
@@ -197,10 +206,9 @@ impl World {
     }
 
     pub fn rand_generate(&mut self) {
-        let mut rng = thread_rng();
         for cell in &mut self.data {
             cell.mass = 0.0;
-            cell.cell_type = if rng.gen::<f32>() < self.threshold {
+            cell.cell_type = if self.rng.gen::<f32>() < self.threshold {
                 CellType::Dirt
             } else {
                 CellType::None
@@ -266,25 +274,25 @@ impl World {
     }
 
     fn move_sand(&mut self, y: usize, x: usize, direction: bool) {
-        if direction {
-            // Right diagonal
-            if self.tmp[[y + 1, x + 1]].cell_type.eq(&CellType::None)
-                || (self.tmp[[y + 1, x + 1]].cell_type.eq(&CellType::Water)
-                    && self.move_water(y + 1, x + 1))
-            {
-                self.tmp[[y, x]].cell_type = CellType::None;
-                self.tmp[[y + 1, x + 1]].cell_type = CellType::Sand;
-            }
-        } else {
-            // Left diagonal
-            if self.tmp[[y + 1, x - 1]].cell_type.eq(&CellType::None)
-                || (self.tmp[[y + 1, x - 1]].cell_type.eq(&CellType::Water)
-                    && self.move_water(y + 1, x - 1))
-            {
-                self.tmp[[y, x]].cell_type = CellType::None;
-                self.tmp[[y + 1, x - 1]].cell_type = CellType::Sand;
-            }
+        let nx = if direction { x + 1 } else { x - 1 };
+        if self.tmp[[y + 1, nx]].cell_type == CellType::None
+            || (self.tmp[[y + 1, nx]].cell_type == CellType::Water && self.move_water(y + 1, nx))
+        {
+            self.move_into_empty([y, x], [y + 1, nx], CellType::Sand, 0.0);
         }
+    }
+
+    fn move_into_empty(&mut self, from: [usize; 2], to: [usize; 2], material: CellType, mass: f32) {
+        // Empty destinations may hold passive water; leave it at the vacated source.
+        let displaced_water = self.tmp[to].mass;
+        self.tmp[from].mass = displaced_water;
+        self.tmp[from].cell_type = if displaced_water >= MIN_MASS {
+            CellType::Water
+        } else {
+            CellType::None
+        };
+        self.tmp[to].cell_type = material;
+        self.tmp[to].mass = mass;
     }
 
     fn move_water(&mut self, y: usize, x: usize) -> bool {
@@ -547,8 +555,7 @@ impl World {
                     || self.data[[y, x]].cell_type.eq(&CellType::FireBurn)
                 {
                     if self.data[[y + 1, x]].cell_type.eq(&CellType::None) {
-                        self.tmp[[y + 1, x]].cell_type = CellType::FireNormal;
-                        self.tmp[[y, x]].cell_type = CellType::None;
+                        self.move_into_empty([y, x], [y + 1, x], CellType::FireNormal, 0.0);
                     } else {
                         if self.data[[y, x]].cell_type.eq(&CellType::FireBurn) {
                             self.tmp[[y, x]].cell_type = CellType::DarkSmoke;
@@ -579,14 +586,13 @@ impl World {
                     || self.data[[y, x]].cell_type.eq(&CellType::Smoke)
                 {
                     if self.data[[y - 1, x]].cell_type.eq(&CellType::None) {
-                        self.tmp[[y - 1, x]].mass = self.data[[y, x]].mass - 0.01;
-                        self.tmp[[y - 1, x]].cell_type = self.data[[y, x]].cell_type;
-                        self.tmp[[y, x]].cell_type = CellType::None;
-                        self.tmp[[y, x]].mass = 0.0;
-                        if self.tmp[[y - 1, x]].mass <= 0.0 {
-                            self.tmp[[y - 1, x]].cell_type = CellType::None;
-                            self.tmp[[y - 1, x]].mass = 0.0;
-                        }
+                        let remaining = (self.data[[y, x]].mass - 0.01).max(0.0);
+                        let material = if remaining > 0.0 {
+                            self.data[[y, x]].cell_type
+                        } else {
+                            CellType::None
+                        };
+                        self.move_into_empty([y, x], [y - 1, x], material, remaining);
                     } else {
                         self.tmp[[y, x]].mass = self.data[[y, x]].mass - 0.01;
                         self.tmp[[y, x]].cell_type = self.data[[y, x]].cell_type;

@@ -16,6 +16,8 @@
 - Run `bash check.sh` for native check/build, formatting, strict Clippy, debug/release
   tests and doc tests. It uses jobs 2 and test threads 1. Keep verification serial;
   record exact results and platform limits in the active plan.
+- For performance work, read [PERFORMANCE.md](PERFORMANCE.md). Benchmarks are
+  explicitly ignored by normal tests and require a quiet, exclusive local slot.
 - Verification is local-only at the user's request; keep GitHub Actions workflows
   removed.
 - Native desktop builds use the committed Cargo.lock and rust-toolchain.toml.

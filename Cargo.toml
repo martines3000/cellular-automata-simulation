@@ -12,3 +12,6 @@ rand = "0.8.5"
 
 [profile.release]
 opt-level = 2
+
+[dev-dependencies]
+divan = { version = "=0.1.21", default-features = false }
