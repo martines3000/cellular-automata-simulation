@@ -6,6 +6,9 @@ mod tests;
 #[cfg(test)]
 mod edit_state_tests;
 
+#[cfg(test)]
+mod wood_tests;
+
 use std::{mem, time::Duration};
 
 use egui::{pos2, vec2, Color32, Pos2, Rect, Rounding, Shape, Vec2};
@@ -347,7 +350,13 @@ impl World {
     }
 
     fn lift_wood(&mut self, y: usize, x: usize, top: usize) {
-        self.tmp[[y, x]].cell_type = CellType::None;
+        let displaced_mass = self.tmp[[top, x]].mass;
+        self.tmp[[y, x]].mass += displaced_mass;
+        self.tmp[[y, x]].cell_type = if self.tmp[[y, x]].mass >= MIN_MASS {
+            CellType::Water
+        } else {
+            CellType::None
+        };
         self.tmp[[top, x]].cell_type = CellType::Wood;
         self.tmp[[top, x]].mass = 0.0;
     }

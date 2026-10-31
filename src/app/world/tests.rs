@@ -45,8 +45,9 @@ fn phase(world: &mut World) {
         // An active source may drain below MIN_MASS and remain Water until the
         // next phase's cleanup; do not impose a new global normalization rule.
     }
-    for i in 0..7 {
-        for (y, x) in [(0, i), (6, i), (i, 0), (i, 6)] {
+    let edge = world.data.dim().0 - 1;
+    for i in 0..=edge {
+        for (y, x) in [(0, i), (edge, i), (i, 0), (i, edge)] {
             assert!(world.data[[y, x]].cell_type == CellType::Dirt);
             assert_eq!(world.data[[y, x]].mass, 0.0);
         }
@@ -178,6 +179,40 @@ fn water_cleanup_repeated_closed_phases() {
         for x in 2..5 {
             assert!(world.data[[3, x]].mass >= MIN_MASS);
             assert!(world.data[[3, x]].cell_type == CellType::Water);
+        }
+    }
+}
+
+#[test]
+fn water_cleanup_closed_mass_matrix_accounts_for_every_residue() {
+    let masses = [
+        0.0,
+        MIN_MASS / 2.0,
+        f32::from_bits(MIN_MASS.to_bits() - 1),
+        MIN_MASS,
+        f32::from_bits(MIN_MASS.to_bits() + 1),
+        MIN_FLOW,
+        1.0,
+        MAX_MASS,
+        MAX_MASS * 2.0,
+    ];
+    for mut configuration in 0..masses.len().pow(4) {
+        let mut world = World::new(4);
+        world.add_border();
+        for (y, x) in [(1, 1), (1, 2), (2, 1), (2, 2)] {
+            water(&mut world, y, x, masses[configuration % masses.len()]);
+            configuration /= masses.len();
+        }
+        for _ in 0..5 {
+            let before = fluid_mass(&world);
+            let discarded: f64 = world
+                .data
+                .iter()
+                .filter(|cell| cell.cell_type == CellType::Water && cell.mass < MIN_MASS)
+                .map(|cell| f64::from(cell.mass))
+                .sum();
+            phase(&mut world);
+            assert_budget(&world, before, discarded);
         }
     }
 }

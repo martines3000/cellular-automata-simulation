@@ -1,7 +1,7 @@
 # F05/F06: editing operations preserve or reset scalar state
 
 - Owner: Codex, this chat; sole world editor and verification owner.
-- Status: complete and verified in working tree on 2026-10-31; committing separately.
+- Status: complete, committed/pushed as `6236c6e` on 2026-10-31.
 - Authorization: continued correctness work and edge-case tests requested.
 - Historical evidence: [F05](../../review-report.html#F05),
   [F06](../../review-report.html#F06), and saved probe source in `reviews/evidence/`.
