@@ -1,7 +1,7 @@
 # F09: simulation timing independent of repaint cadence
 
 - Owner: Codex, this chat; sole world editor and verification owner.
-- Status: complete and verified in working tree (2026-10-31); committing separately.
+- Status: complete, committed/pushed as `cc3c42f` (2026-10-31).
 - Authorization: user requested native-only cleanup followed by the next task;
   the cleanup is committed as `778f2c8`. F09 is next in status.
 - Evidence: [historical F09](../../review-report.html#F09).
@@ -89,6 +89,6 @@ review/evidence files remain unchanged. No GUI interaction, measured frame
 performance, cross-platform execution or arbitrary-world proof is claimed.
 The scheduler stays on the UI thread; rates exceeding 16 due ticks per update
 are intentionally limited by catch-up policy. Actual material stochasticity is
-unchanged. Verification lock released at completion. Commit identity follows in
-status/history. Recover by reverting this bounded timing commit alone after
+unchanged. Verification lock released at completion. Commit: `cc3c42f`, pushed to
+`codex/simulation-correctness-fixes`. Recover by reverting this bounded timing commit alone after
 reviewing conflicts with later changes, preserving native-only cleanup.

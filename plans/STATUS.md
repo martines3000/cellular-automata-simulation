@@ -25,7 +25,7 @@ Assessment: [review-report.html](../review-report.html#F04).
 | Committed/pushed | F07 displacement | `7195209`; 19 total tests pass, including 6,561-case mass matrix. [Completed plan](completed/f07-wood-displacement.md). |
 | Committed/pushed | F08 direction / F07 follow-up | `01b4340`; 27 total tests pass in debug/release/all-features. [Completed plan](completed/f08-lateral-flow.md). |
 | Retired by removal | F01/F02/F11/F12 | Browser entry point, build/hosting scripts and assets removed at user request; no web compatibility claim. [Cleanup plan](completed/native-only.md). |
-| Verified locally | F09 timing | Fixed-step accumulator, 16-step catch-up cap, pause/rate resets and Steps/s label. 37 tests pass. [Completed plan](completed/f09-fixed-step.md); commit/push in progress. |
+| Committed/pushed | F09 timing | `cc3c42f`; fixed-step accumulator, 16-step catch-up cap, pause/rate resets and Steps/s label. 37 tests pass. [Completed plan](completed/f09-fixed-step.md). |
 | Next native backlog | F13–F16 performance/interaction | Open: rendering work, clone allocation, paused repainting, click painting. |
 
 The user's 2026-10-30 follow-up authorized committing/pushing on a fresh branch
@@ -42,7 +42,7 @@ diagnostics remain, with no new ones. No GUI/performance claim. Counts in earlie
 rows reflect their commit's suite; historical evidence remains unchanged.
 
 2026-10-31: user requested browser/WASM removal followed by the next native task.
-Cleanup is committed/pushed as `778f2c8`; F09 is implemented and verified. Browser
+Cleanup is committed/pushed as `778f2c8`; F09 is committed/pushed as `cc3c42f`. Browser
 findings are retired by removing delivery/server support, not by repairing the
 old browser pipeline. The cleanup pruned five unused packages with no remaining
 version/checksum changes; F09 uses that unchanged graph. Cargo.lock/target stay
