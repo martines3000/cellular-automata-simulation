@@ -1,6 +1,7 @@
 use super::*;
 
 impl World {
+    #[cfg(test)]
     pub(in crate::app) fn apply_phase_brush(
         &mut self,
         pointer_pos: Option<Pos2>,
@@ -10,6 +11,10 @@ impl World {
         let Some(index) = self.editable_index(pointer_pos, clip_rect) else {
             return;
         };
+        self.phase_cell(index, tool);
+    }
+
+    pub(in crate::app) fn phase_cell(&mut self, index: [usize; 2], tool: PhaseTool) {
         let cell = &mut self.data[index];
         match tool {
             PhaseTool::Freeze

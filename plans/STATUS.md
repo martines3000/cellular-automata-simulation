@@ -6,8 +6,9 @@ Assessment: [review-report.html](../review-report.html#F04).
 ## Verification coordination
 
 - Owner: Codex, this chat; sole editor of `src/app/world/mod.rs`.
-- Active job: none. Steam local/native checks complete; owned app stopped and
-  shared lock released. Timed sampling remains deferred at the user's request.
+- Active job: none. Workbench checks, native inspection and CPU sampling complete;
+  owned app stopped and shared lock released. Commit/push handoff follows.
+  [Completed plan](completed/game-workbench.md).
 - Shared lock for cooperating workers:
   `/tmp/cellular-automata-simulation-verification.lock` (directory; owner recorded
   inside). Inspect process inventory before acquiring; never remove another owner's
@@ -32,7 +33,7 @@ Assessment: [review-report.html](../review-report.html#F04).
 | Committed/pushed | Display visibility/timing | `d68114d`; collapsed Display keeps active simulation advancing; preserves pause and paint/update order. [Completed plan](completed/display-visibility.md). |
 | Committed/pushed | Mixed-material water preservation | `563cfb2`; sand/fire/smoke displacement preserves passive water; seeded full-phase budgets. [Completed plan](completed/mixed-material-performance.md). |
 | Committed/pushed | Larger-world setup and scaling | `449ed04`; 100/256/512/1024 controls, compact 8 B cells and row geometry merging; local-only Divan harness. |
-| Deferred by user | CPU/GPU/frame measurements | [Local sampling plan](planned/local-performance-measurements.md); ready for a quiet exclusive slot; no timing/FPS claim. |
+| Measured / native GPU follow-up | CPU/GPU/frame measurements | [Completed CPU sampling](completed/local-performance-measurements.md); workbench evidence below. GPU/presentation timings remain separate. |
 
 The user's 2026-10-30 follow-up authorized committing/pushing on a fresh branch
 and continuing work; on 2026-10-31 the user requested edge-case regressions.
@@ -69,8 +70,8 @@ tests plus 2 ignored performance helpers (including the follow-ups below).
 commands/results. [Completed mixed-material/scaling setup](completed/mixed-material-performance.md)
 records the current changes, exact checks and limits.
 
-Remaining priorities: collect local performance samples when the user is ready,
-then profile native frames/decide any further engine or renderer work from evidence;
+Remaining priorities: profile actual native frames/upload costs after the workbench
+CPU samples below, then compare a bounded CPU or compute prototype against the oracle;
 dependency compatibility remains separate (historical quick-xml warning). Windows
 support is removed from the backlog; CI remains removed. Benchmark tools and GPU
 tradeoffs are in [PERFORMANCE.md](../PERFORMANCE.md) and its linked research.
@@ -117,3 +118,27 @@ alive, so Vaporize is verified headlessly. App stopped, lock released. Cell stay
 
 Next bounded task: Lava plus Stone with explicit reaction quantities; Acid/thermal
 energy and optional effects remain separate. No performance timings collected.
+
+## Current handoff — simulation workbench
+
+Implemented in the working tree; commit/push pending final diff inspection.
+[Completed plan](completed/game-workbench.md), [measurements and exact checks](../reviews/evidence/2026-11-01-workbench.md).
+Earlier timing deferrals and proposed priorities above are chronological; the user
+subsequently authorized measurement, brushes, visuals and continued implementation.
+
+- Fast smoothed overview for large zoomed-out worlds; solid batched close-view quads
+  remove rectangle seams. Fractional geometry remains available; optional bounded
+  static material accents and CPU diagnostics added.
+- Round/square 1–63-cell continuous brushes, once-per-stroke quantity placement,
+  bounded paused undo / Cmd/Ctrl+Z, pointer-centered zoom and right/middle pan.
+- Floating Ice, Steam Chamber and Snowfall labs at every supported size; app opens
+  in the paused floating-ice experiment. Loading a lab replaces the world explicitly.
+- Full check.sh passes: 118 debug and 118 release tests, 2 ignored performance
+  helpers, 0 doc tests, native build/check, fmt and strict Clippy. Release app built;
+  native interaction/presentation reviewed and app stopped. Untimed 76-case smoke
+  and two final measurement runs pass. Historical evidence/lock/toolchain unchanged.
+- At 1024², matched UI preparation medians: geometry 19.26/19.44 ms vs overview
+  6.532/6.725 ms. CPU-only, variable desktop background load; no FPS/GPU claim.
+- Next priorities: native GPU/frame/upload profiling; equivalence-tested CPU phase /
+  memory work or bounded compute prototype; further lab/brush polish; explicit
+  Lava/Stone reaction design before additional chemistry. No Windows/CI/web backlog.

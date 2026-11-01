@@ -31,6 +31,7 @@ impl Harness {
         });
         let mut app = App::default();
         epi::App::setup(&mut app, &ctx, &frame, None);
+        app.world.clear(); // Tests start empty; players start in the floating-ice lab.
         app.fit_view = false; // Input fixtures use a known cell scale.
         Self {
             app,
@@ -72,6 +73,26 @@ impl Harness {
                 _ => None,
             })
             .expect("canvas background")
+    }
+
+    pub(super) fn reveal(&mut self, label: &str) -> Pos2 {
+        for _ in 0..24 {
+            let output = self.input(vec![]);
+            if let Some(pos) = output.shapes.iter().find_map(|shape| match &shape.1 {
+                Shape::Text(text) if text.galley.text() == label => {
+                    let p = text.pos + text.galley.size() * 0.5;
+                    (shape.0.contains(p) && p.y < self.screen_size.y - 40.0).then_some(p)
+                }
+                _ => None,
+            }) {
+                return pos;
+            }
+            self.input(vec![
+                Event::PointerMoved(pos2(100.0, 400.0)),
+                Event::Scroll(vec2(0.0, -120.0)),
+            ]);
+        }
+        panic!("could not reveal {label}");
     }
 
     pub(super) fn button(&mut self, pos: Pos2, button: PointerButton, pressed: bool) {
@@ -187,16 +208,8 @@ fn canvas_world_resize_requires_paused_confirmation() {
     for running in [true, false] {
         h.app.running = running;
         let output = h.input(vec![]);
-        let button = output
-            .shapes
-            .iter()
-            .find_map(|shape| match &shape.1 {
-                Shape::Text(text) if text.galley.text() == "Resize and clear" => {
-                    Some(text.pos + text.galley.size() * 0.5)
-                }
-                _ => None,
-            })
-            .expect("Resize and clear button");
+        let _ = output;
+        let button = h.reveal("Resize and clear");
         assert_eq!(h.app.world.data.dim(), (100, 100));
         h.button(button, PointerButton::Primary, true);
         h.button(button, PointerButton::Primary, false);
@@ -475,4 +488,322 @@ fn steam_ui_phase_brush_coalesced_clicks_respect_pan_zoom_and_material_borders()
             }
         }
     }
+}
+
+#[test]
+fn brush_fast_strokes_fill_all_cells_once_and_undo_restores_exact_state() {
+    for square in [false, true] {
+        let mut h = Harness::new();
+        h.app.brush.radius = 2;
+        h.app.brush.square = square;
+        let view = h.canvas();
+        let before = h.app.world.data.clone();
+        let pos = |x: f32, y: f32| view.min + vec2(x + 0.5, y + 0.5) * 5.0;
+        h.button(pos(4.0, 4.0), PointerButton::Primary, true);
+        // Several pointer samples and a release may arrive in a single frame.
+        h.input(vec![
+            Event::PointerMoved(pos(30.0, 4.0)),
+            Event::PointerMoved(pos(30.0, 30.0)),
+            Event::PointerButton {
+                pos: pos(30.0, 30.0),
+                button: PointerButton::Primary,
+                pressed: false,
+                modifiers: Modifiers::default(),
+            },
+        ]);
+        for x in 4..=30 {
+            assert_eq!(h.app.world.data[[4, x]].mass, 1.0);
+        }
+        for y in 4..=30 {
+            assert_eq!(h.app.world.data[[y, 30]].mass, 1.0);
+        }
+        assert!(h
+            .app
+            .world
+            .data
+            .iter()
+            .all(|cell| cell.mass == 0.0 || cell.mass == 1.0));
+        h.app.undo_brush();
+        assert!(h.app.world.data == before);
+        assert!(h.app.world.tmp == before);
+        assert!(!h.app.brush.can_undo());
+    }
+}
+
+#[test]
+fn brush_diagonals_reverse_directions_and_max_size_preserve_borders() {
+    for (start, end) in [
+        ((3, 3), (40, 40)),
+        ((40, 3), (3, 40)),
+        ((40, 40), (3, 3)),
+        ((3, 40), (40, 3)),
+    ] {
+        let mut h = Harness::new();
+        let view = h.canvas();
+        let pos = |p: (usize, usize)| view.min + vec2(p.0 as f32 + 0.5, p.1 as f32 + 0.5) * 5.0;
+        h.button(pos(start), PointerButton::Primary, true);
+        h.button(pos(end), PointerButton::Primary, false);
+        for i in 0..=37 {
+            let x = if start.0 < end.0 {
+                start.0 + i
+            } else {
+                start.0 - i
+            };
+            let y = if start.1 < end.1 {
+                start.1 + i
+            } else {
+                start.1 - i
+            };
+            assert_eq!(h.app.world.data[[y, x]].mass, 1.0);
+        }
+    }
+    for square in [false, true] {
+        let mut h = Harness::new();
+        h.app.brush.radius = 31;
+        h.app.brush.square = square;
+        let view = h.canvas();
+        h.button(view.min + vec2(2.5, 2.5), PointerButton::Primary, true);
+        h.button(view.min + vec2(2.5, 2.5), PointerButton::Primary, false);
+        for i in 0..100 {
+            for index in [[0, i], [99, i], [i, 0], [i, 99]] {
+                assert!(h.app.world.data[index].cell_type == CellType::Dirt);
+                assert_eq!(h.app.world.data[index].mass, 0.0);
+            }
+        }
+        assert_eq!(h.app.world.data[[1, 1]].mass, 1.0);
+        assert_eq!(
+            h.app.world.data[[31, 31]].mass,
+            if square { 1.0 } else { 0.0 }
+        );
+    }
+}
+
+#[test]
+fn brush_leaving_canvas_breaks_line_and_repeated_samples_do_not_pour() {
+    let mut h = Harness::new();
+    let view = h.canvas();
+    let a = view.min + vec2(17.5, 17.5);
+    let b = view.min + vec2(97.5, 17.5);
+    h.button(a, PointerButton::Primary, true);
+    for _ in 0..4 {
+        h.input(vec![Event::PointerMoved(a)]);
+    }
+    h.input(vec![Event::PointerMoved(view.min - vec2(10.0, 10.0))]);
+    h.input(vec![Event::PointerMoved(b)]);
+    h.button(b, PointerButton::Primary, false);
+    assert_eq!(h.app.world.data[[3, 3]].mass, 1.0);
+    assert_eq!(h.app.world.data[[3, 19]].mass, 1.0);
+    assert_eq!(h.app.world.data[[3, 10]].mass, 0.0);
+    h.button(a, PointerButton::Primary, true);
+    h.button(a, PointerButton::Primary, false);
+    assert_eq!(h.app.world.data[[3, 3]].mass, 3.0); // A new stroke adds the existing +2 units.
+    h.app.toggle_running();
+    h.app.toggle_running();
+    assert!(!h.app.brush.can_undo());
+}
+
+#[test]
+fn brush_phase_roundtrip_and_undo_preserve_small_and_large_quantities() {
+    let mut h = Harness::new();
+    let view = h.canvas();
+    h.app.brush.radius = 3;
+    for y in 3..10 {
+        for x in 3..10 {
+            h.app.world.data[[y, x]] = world::cell::Cell {
+                cell_type: CellType::Water,
+                mass: if x % 2 == 0 { 0.005 } else { 25.0 },
+            };
+        }
+    }
+    let before = h.app.world.data.clone();
+    for tool in [
+        PhaseTool::Freeze,
+        PhaseTool::Melt,
+        PhaseTool::Vaporize,
+        PhaseTool::Condense,
+    ] {
+        h.app.phase_tool = Some(tool);
+        let pos = view.min + vec2(32.5, 32.5);
+        h.button(pos, PointerButton::Primary, true);
+        h.button(pos, PointerButton::Primary, false);
+        for (old, new) in before.iter().zip(h.app.world.data.iter()) {
+            assert_eq!(old.water_quantity(), new.water_quantity());
+        }
+    }
+    for _ in 0..4 {
+        h.app.undo_brush();
+    }
+    assert!(h.app.world.data == before);
+}
+
+#[test]
+fn canvas_wheel_zoom_keeps_pointer_anchor_and_drag_pan_never_paints() {
+    let mut h = Harness::new();
+    let view = h.canvas();
+    let pos = view.min + vec2(120.0, 140.0);
+    h.input(vec![Event::PointerMoved(pos)]);
+    let anchor = (pos - view.min - h.app.world.pos_shift) / h.app.world.block_size;
+    h.input(vec![Event::Scroll(vec2(0.0, 150.0))]);
+    let after = (pos - view.min - h.app.world.pos_shift) / h.app.world.block_size;
+    assert!((anchor - after).length() < 0.0001);
+    assert!(!h.app.fit_view);
+    let before = h.app.world.data.clone();
+    let shift = h.app.world.shift;
+    h.button(pos, PointerButton::Secondary, true);
+    h.input(vec![Event::PointerMoved(pos - vec2(30.0, 40.0))]);
+    h.button(pos - vec2(30.0, 40.0), PointerButton::Secondary, false);
+    assert!(h.app.world.shift.x > shift.x && h.app.world.shift.y > shift.y);
+    assert!(h.app.world.data == before);
+}
+
+#[test]
+fn overview_switches_to_geometry_for_fractional_surfaces_and_close_zoom() {
+    let mut h = Harness::new();
+    h.app.world.block_size = 1.0;
+    h.canvas();
+    assert!(h.app.texture.is_some());
+    assert_eq!(h.app.rendered_shapes, 1);
+    h.app.world.use_shift = true;
+    h.input(vec![]);
+    assert!(h.app.texture.is_none());
+    h.app.world.use_shift = false;
+    h.app.world.block_size = 5.0;
+    h.input(vec![]);
+    assert!(h.app.texture.is_none());
+}
+
+#[test]
+fn labs_ui_requires_pause_and_clears_brush_history_on_load() {
+    let mut h = Harness::new();
+    let view = h.canvas();
+    let p = view.min + vec2(17.5, 17.5);
+    h.button(p, PointerButton::Primary, true);
+    h.button(p, PointerButton::Primary, false);
+    assert!(h.app.brush.can_undo());
+    h.app.lab = Lab::SteamChamber;
+    h.app.running = true;
+    let load = text_position(&h.input(vec![]), "Load lab");
+    h.button(load, PointerButton::Primary, true);
+    h.button(load, PointerButton::Primary, false);
+    assert!(!h
+        .app
+        .world
+        .data
+        .iter()
+        .any(|cell| cell.cell_type == CellType::Ice));
+    h.app.running = false;
+    let load = text_position(&h.input(vec![]), "Load lab");
+    h.button(load, PointerButton::Primary, true);
+    h.button(load, PointerButton::Primary, false);
+    assert!(h
+        .app
+        .world
+        .data
+        .iter()
+        .any(|cell| cell.cell_type == CellType::Ice));
+    assert!(h.app.fit_view);
+    assert!(!h.app.brush.can_undo());
+}
+
+#[test]
+fn canvas_zoom_out_and_repeated_frames_keep_anchor_and_do_not_pan_on_press() {
+    let mut h = Harness::new();
+    let view = h.canvas();
+    let pos = view.min + vec2(120.0, 140.0);
+    h.input(vec![Event::PointerMoved(pos)]);
+    let anchor = (pos - view.min - h.app.world.pos_shift) / h.app.world.block_size;
+    h.input(vec![Event::Scroll(vec2(0.0, -200.0))]);
+    for _ in 0..3 {
+        h.input(vec![]);
+    }
+    let after = (pos - view.min - h.app.world.pos_shift) / h.app.world.block_size;
+    assert!((anchor - after).length() < 0.0001);
+    let shift = h.app.world.shift;
+    h.button(pos + vec2(200.0, 0.0), PointerButton::Secondary, true);
+    assert_eq!(h.app.world.shift, shift);
+    h.button(pos + vec2(200.0, 0.0), PointerButton::Secondary, false);
+}
+
+#[test]
+fn canvas_pan_from_negative_zoom_shift_does_not_snap_back_to_origin() {
+    let mut h = Harness::new();
+    let view = h.canvas();
+    h.app.world.shift = vec2(-20.0, -15.0);
+    h.app.world.update_pos();
+    let p = view.center();
+    h.button(p, PointerButton::Secondary, true);
+    h.input(vec![Event::PointerMoved(p + vec2(5.0, 5.0))]);
+    assert!((h.app.world.shift - vec2(-21.0, -16.0)).length() < 0.0001);
+    h.button(p + vec2(5.0, 5.0), PointerButton::Secondary, false);
+}
+
+#[test]
+fn brush_undo_shortcut_restores_state_and_respects_keyboard_focus() {
+    let mut h = Harness::new();
+    let view = h.canvas();
+    let before = h.app.world.data.clone();
+    let pos = view.min + vec2(17.5, 17.5);
+    h.button(pos, PointerButton::Primary, true);
+    h.button(pos, PointerButton::Primary, false);
+    let modifiers = Modifiers {
+        command: true,
+        mac_cmd: true,
+        ..Default::default()
+    };
+    h.ctx.begin_frame(RawInput {
+        screen_rect: Some(Rect::from_min_size(Pos2::ZERO, h.screen_size)),
+        modifiers,
+        events: vec![Event::Key {
+            key: egui::Key::Z,
+            pressed: true,
+            modifiers,
+        }],
+        ..Default::default()
+    });
+    epi::App::update(&mut h.app, &h.ctx, &h.frame);
+    let _ = h.ctx.end_frame();
+    assert!(h.app.world.data == before);
+    assert!(!h.app.brush.can_undo());
+    h.input(vec![Event::Key {
+        key: egui::Key::Z,
+        pressed: false,
+        modifiers: Modifiers::default(),
+    }]);
+    h.button(pos, PointerButton::Primary, true);
+    h.button(pos, PointerButton::Primary, false);
+    let painted = h.app.world.data.clone();
+    h.ctx.begin_frame(RawInput {
+        screen_rect: Some(Rect::from_min_size(Pos2::ZERO, h.screen_size)),
+        modifiers,
+        events: vec![Event::Key {
+            key: egui::Key::Z,
+            pressed: true,
+            modifiers,
+        }],
+        ..Default::default()
+    });
+    h.ctx.memory().request_focus(egui::Id::new("numeric-edit"));
+    assert!(h.ctx.wants_keyboard_input());
+    epi::App::update(&mut h.app, &h.ctx, &h.frame);
+    let _ = h.ctx.end_frame();
+    assert!(h.app.world.data == painted);
+}
+
+#[test]
+fn detailed_geometry_batches_touching_cells_without_antialias_edges() {
+    let mut h = Harness::new();
+    h.app.highlights = false;
+    h.app.world.data[[4, 4]].cell_type = CellType::Dirt;
+    h.app.world.data[[5, 4]].cell_type = CellType::Dirt;
+    let view = h.canvas();
+    let output = h.input(vec![]);
+    assert!(output
+        .shapes
+        .iter()
+        .any(|shape| matches!(&shape.1,Shape::Mesh(mesh)
+        if mesh.vertices.iter().any(|v|v.color==theme::DIRT && view.contains(v.pos)))));
+    assert!(!output
+        .shapes
+        .iter()
+        .any(|shape| matches!(&shape.1,Shape::Rect(r) if r.fill==theme::DIRT && view.contains(r.rect.center()))));
 }

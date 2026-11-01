@@ -11,16 +11,7 @@ fn canvas_visible(output: &FullOutput) -> bool {
 
 fn settings_button(h: &mut Harness) -> Pos2 {
     h.canvas();
-    h.input(vec![])
-        .shapes
-        .iter()
-        .find_map(|shape| match &shape.1 {
-            Shape::Text(text) if text.galley.text() == "Pan view" => {
-                Some(text.pos + text.galley.size() * 0.5)
-            }
-            _ => None,
-        })
-        .expect("Pan view settings header")
+    h.reveal("Pan view")
 }
 
 fn pointer_button(pos: Pos2, pressed: bool) -> Vec<Event> {

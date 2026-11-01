@@ -1,5 +1,6 @@
 pub mod cell;
 mod frozen;
+pub(super) mod labs;
 mod steam;
 
 #[cfg(test)]
@@ -52,8 +53,8 @@ use std::{
 };
 
 #[cfg(test)]
-use egui::pos2;
-use egui::{vec2, Color32, Pos2, Rect, Rounding, Shape, Vec2};
+use egui::{pos2, Pos2};
+use egui::{vec2, Color32, Rect, Rounding, Shape, Vec2};
 use ndarray::Array2;
 
 use cell::*;
@@ -62,7 +63,7 @@ use rand::{rngs::StdRng, Rng, SeedableRng};
 const MIN_FLOW: f32 = 0.5;
 const MAX_FLOW: f32 = 3.0;
 const MAX_COMPRESS: f32 = 0.3;
-const MIN_DRAW: f32 = 0.1;
+pub(super) const MIN_DRAW: f32 = 0.1;
 const MIN_MASS: f32 = 0.01;
 const MAX_MASS: f32 = 10.0;
 const FLOW_SMOOTH: f32 = 0.75;
@@ -717,6 +718,7 @@ impl World {
         self.pos_shift.y = -self.block_size * self.shift.y;
     }
 
+    #[cfg(test)]
     fn editable_index(&self, pointer_pos: Option<Pos2>, clip_rect: Rect) -> Option<[usize; 2]> {
         let pos = pointer_pos?;
         if !clip_rect.contains(pos) || pos.x >= clip_rect.max.x || pos.y >= clip_rect.max.y {
@@ -727,10 +729,15 @@ impl World {
             .then_some([block.y as usize, block.x as usize])
     }
 
+    #[cfg(test)]
     pub fn transform_cell(&mut self, pointer_pos: Option<Pos2>, clip_rect: Rect) {
         let Some(index) = self.editable_index(pointer_pos, clip_rect) else {
             return;
         };
+        self.paint_cell(index);
+    }
+
+    pub(super) fn paint_cell(&mut self, index: [usize; 2]) {
         let cell = &mut self.data[index];
         match self.selected_cell_type {
             CellType::Water if cell.cell_type == CellType::None => {
@@ -750,6 +757,7 @@ impl World {
         }
     }
 
+    #[cfg(test)]
     fn get_block_pos(&self, pos: Vec2) -> Vec2 {
         ((pos - self.pos_shift) / self.block_size).floor()
     }

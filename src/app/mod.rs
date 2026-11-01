@@ -1,3 +1,5 @@
+mod brush;
+mod render;
 mod theme;
 mod world;
 
@@ -10,6 +12,7 @@ use eframe::{
 };
 use egui::{pos2, vec2, Rect};
 use world::cell::{CellType, ICE_COLOR, SNOW_COLOR, STEAM_COLOR};
+use world::labs::Lab;
 use world::{PhaseTool, World};
 
 pub struct App {
@@ -20,6 +23,15 @@ pub struct App {
     fit_view: bool,
     show_grid: bool,
     phase_tool: Option<PhaseTool>,
+    brush: brush::Brushes,
+    lab: Lab,
+    highlights: bool,
+    fast_overview: bool,
+    texture: Option<egui::TextureHandle>,
+    frame_ms: f32,
+    simulation_ms: f32,
+    render_ms: f32,
+    rendered_shapes: usize,
 }
 
 const MATERIALS: [(CellType, &str, &str, Color32); 9] = [
@@ -82,20 +94,32 @@ const MATERIALS: [(CellType, &str, &str, Color32); 9] = [
 impl Default for App {
     fn default() -> Self {
         let num_of_blocks = 100;
+        let mut world = World::new(num_of_blocks);
+        world.load_lab(Lab::FloatingIce);
         Self {
             running: false,
-            world: World::new(num_of_blocks),
+            world,
             shapes: Vec::new(),
             pending_world_size: num_of_blocks,
             fit_view: true,
             show_grid: false,
             phase_tool: None,
+            brush: brush::Brushes::default(),
+            lab: Lab::FloatingIce,
+            highlights: true,
+            fast_overview: true,
+            texture: None,
+            frame_ms: 0.0,
+            simulation_ms: 0.0,
+            render_ms: 0.0,
+            rendered_shapes: 0,
         }
     }
 }
 
 impl App {
     fn toggle_running(&mut self) {
+        self.brush.clear();
         self.running = !self.running;
         self.world.reset_timing();
     }
@@ -144,6 +168,7 @@ impl App {
                         .on_hover_text("Advance one simulation step while paused")
                         .clicked()
                     {
+                        self.brush.clear();
                         self.world.step_once();
                     }
                     ui.label(
@@ -310,13 +335,23 @@ impl App {
                             "Draw water levels and floating wood at fractional cell heights",
                         );
                     ui.checkbox(&mut self.show_grid, "Guide grid");
+                    ui.checkbox(&mut self.highlights, "Material highlights").on_hover_text("Static surface accents and fire glow in close views. No decorative animation.");
+                    ui.checkbox(&mut self.fast_overview, "Fast overview").on_hover_text(
+                        "Smoothed texture below 3 points/cell. Fractional surfaces use detailed geometry.");
+                    egui::CollapsingHeader::new("CPU diagnostics").show(ui, |ui| {
+                        ui.label(format!("App update: {:.2} ms", self.frame_ms));
+                        ui.label(format!("Simulation: {:.2} ms", self.simulation_ms));
+                        ui.label(format!("Scene preparation: {:.2} ms", self.render_ms));
+                        ui.label(format!("Base scene shapes: {}", self.rendered_shapes));
+                        ui.label("Previous frame, CPU only. Excludes GPU and presentation.");
+                    });
                     egui::CollapsingHeader::new("Pan view").show(ui, |ui| {
                         let max = self.world.data.ncols() as f32;
                         let x = ui
-                            .add(Slider::new(&mut self.world.shift.x, 0.0..=max).text("Horizontal"))
+                            .add(Slider::new(&mut self.world.shift.x, -max..=max).text("Horizontal"))
                             .changed();
                         let y = ui
-                            .add(Slider::new(&mut self.world.shift.y, 0.0..=max).text("Vertical"))
+                            .add(Slider::new(&mut self.world.shift.y, -max..=max).text("Vertical"))
                             .changed();
                         if x || y {
                             self.fit_view = false;
@@ -355,6 +390,7 @@ impl App {
                             .on_hover_text("Replaces the world with an empty bordered grid")
                             .clicked()
                         {
+                            self.brush.clear();
                             self.world.resize_and_clear(self.pending_world_size);
                             self.fit_view = true;
                         }
@@ -371,20 +407,23 @@ impl App {
                                 .add(Button::new("Generate terrain").sense(Sense::click_and_drag()))
                                 .clicked()
                             {
-                                self.world.rand_generate();
+                                self.brush.clear();
+                            self.world.rand_generate();
                             }
                             ui.horizontal(|ui| {
                                 if ui
                                     .add(Button::new("Smooth").sense(Sense::click_and_drag()))
                                     .clicked()
                                 {
-                                    self.world.smooth();
+                                    self.brush.clear();
+                            self.world.smooth();
                                 }
                                 if ui
                                     .add(Button::new("Clear world").sense(Sense::click_and_drag()))
                                     .clicked()
                                 {
-                                    self.world.clear();
+                                    self.brush.clear();
+                            self.world.clear();
                                 }
                             });
                         });
@@ -409,12 +448,23 @@ impl App {
                             .color(theme::MUTED),
                     );
                     ui.with_layout(egui::Layout::right_to_left(), |ui| {
-                        ui.label(
-                            RichText::new("Click or drag to place material")
-                                .size(11.0)
-                                .color(theme::MUTED),
-                        );
+                        if ui.add_enabled(!self.running, Button::new("Load lab").sense(Sense::click_and_drag()))
+                            .on_hover_text("Replaces the current world. Pause first.").clicked() {
+                            self.brush.clear(); self.world.load_lab(self.lab); self.fit_view=true;
+                        }
+                        egui::ComboBox::from_id_source("lab").selected_text(self.lab.name()).show_ui(ui, |ui| {
+                            for lab in Lab::ALL {ui.selectable_value(&mut self.lab,lab,lab.name()).on_hover_text(lab.description());}
+                        });
                     });
+                });
+                ui.horizontal(|ui| {
+                    ui.label(format!("Brush · {} {}", self.brush.radius * 2 + 1, if self.brush.radius==0 {"cell"} else {"cells"}));
+                    ui.add(Slider::new(&mut self.brush.radius, 0..=31).show_value(false));
+                    ui.selectable_value(&mut self.brush.square, false, "Round");
+                    ui.selectable_value(&mut self.brush.square, true, "Square");
+                    if ui.add_enabled(!self.running && self.brush.can_undo(), Button::new("Undo brush").sense(Sense::click_and_drag())).on_hover_text("Paused strokes only · Cmd/Ctrl+Z. Play, Step and world actions clear history.").clicked() {
+                        self.undo_brush();
+                    }
                 });
                 ui.add_space(4.0);
                 let (outer, _) = ui.allocate_exact_size(ui.available_size(), Sense::hover());
@@ -430,31 +480,21 @@ impl App {
                     self.world.update_pos();
                 }
                 let response = ui.interact(rect, ui.id().with("paint"), Sense::click_and_drag());
-                let primary_pressed = ui.input().events.iter().any(|event| {
-                    matches!(
-                        event,
-                        egui::Event::PointerButton {
-                            button: egui::PointerButton::Primary,
-                            pressed: true,
-                            ..
-                        }
-                    )
-                });
-                // egui starts dragging on press; don't add the same click on release.
-                if response.dragged_by(egui::PointerButton::Primary)
-                    || (response.clicked() && primary_pressed)
-                {
-                    if let Some(tool) = self.phase_tool {
-                        self.world
-                            .apply_phase_brush(response.interact_pointer_pos(), rect, tool);
-                    } else {
-                        self.world
-                            .transform_cell(response.interact_pointer_pos(), rect);
-                    }
-                }
+                self.navigate(ctx, &response, rect);
+                let owns_pointer =
+                    response.dragged_by(egui::PointerButton::Primary) || response.clicked();
+                self.brush_input(
+                    &ui.input().events,
+                    owns_pointer,
+                    rect,
+                    ui.input().pointer.primary_down(),
+                );
+                let simulation_start = std::time::Instant::now();
                 if self.running {
                     self.world.update();
                 }
+                self.simulation_ms = simulation_start.elapsed().as_secs_f32() * 1000.0;
+                let render_start = std::time::Instant::now();
                 if self.show_grid {
                     let spacing = (self.world.block_size * 10.0).max(8.0);
                     let start = rect.min
@@ -478,23 +518,70 @@ impl App {
                     }
                 }
                 self.shapes.clear();
-                self.world.gen_shapes(&mut self.shapes, rect);
-                for mut shape in self.shapes.drain(..) {
-                    if let Shape::Rect(cell) = &mut shape {
-                        cell.fill = theme::scene_color(cell.fill);
+                self.rendered_shapes = 0;
+                if self.fast_overview && !self.world.use_shift && self.world.block_size < 3.0 {
+                    if let Some((image_rect, image)) = render::overview(&self.world, rect) {
+                        if let Some(texture) = &mut self.texture {
+                            texture.set(image);
+                        } else {
+                            self.texture = Some(ctx.load_texture("world", image));
+                        }
+                        let mut mesh =
+                            egui::epaint::Mesh::with_texture(self.texture.as_ref().unwrap().id());
+                        mesh.add_rect_with_uv(image_rect, render::UV, Color32::WHITE);
+                        painter.add(Shape::mesh(mesh));
+                        self.rendered_shapes = 1;
                     }
-                    painter.add(shape);
+                } else {
+                    // Release the overview allocation when returning to detailed geometry.
+                    self.texture = None;
+                    self.world.gen_shapes(&mut self.shapes, rect);
+                    self.rendered_shapes = self.shapes.len();
+                    if self.highlights { render::fire_glow(&self.shapes, &painter, self.world.block_size); }
+                    // Solid quads avoid antialias seams between touching cell rectangles.
+                    let mut mesh = egui::epaint::Mesh::default();
+                    mesh.reserve_vertices(self.shapes.len()*4);
+                    mesh.reserve_triangles(self.shapes.len()*2);
+                    for shape in &self.shapes {
+                        if let Shape::Rect(cell) = shape {
+                            mesh.add_colored_rect(cell.rect, theme::scene_color(cell.fill));
+                        }
+                    }
+                    painter.add(Shape::mesh(mesh));
+                    let mut accents = 0;
+                    for mut shape in self.shapes.drain(..) {
+                        if !self.highlights || accents >= 1024 { break; }
+                        if let Shape::Rect(cell) = &mut shape { cell.fill = theme::scene_color(cell.fill); }
+                        if let Some(accent) = render::surface_accent(&shape, self.world.block_size) {
+                            painter.add(accent); accents += 1;
+                        }
+                    }
                 }
+                self.render_ms = render_start.elapsed().as_secs_f32() * 1000.0;
                 if response.hovered() {
                     if let Some(pos) = response.hover_pos() {
                         let origin = rect.min + self.world.pos_shift;
                         let cell = ((pos - origin) / self.world.block_size).floor();
                         if self.world.bounds_valid(cell) {
-                            let cell_rect = Rect::from_min_size(
-                                origin + cell * self.world.block_size,
-                                vec2(self.world.block_size, self.world.block_size),
-                            );
-                            painter.rect_stroke(cell_rect, 0.0, Stroke::new(1.0, theme::ACCENT));
+                            let radius = self.brush.radius as f32;
+                            let center = origin + (cell + vec2(0.5, 0.5)) * self.world.block_size;
+                            let extent = (radius + 0.5) * self.world.block_size;
+                            if self.brush.square || radius == 0.0 {
+                                painter.rect_stroke(
+                                    Rect::from_center_size(
+                                        center,
+                                        vec2(extent * 2.0, extent * 2.0),
+                                    ),
+                                    0.0,
+                                    Stroke::new(1.0, theme::ACCENT),
+                                );
+                            } else {
+                                painter.circle_stroke(
+                                    center,
+                                    extent,
+                                    Stroke::new(1.0, theme::ACCENT),
+                                );
+                            }
                         }
                     }
                 }
@@ -531,8 +618,15 @@ impl epi::App for App {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {
+        let frame_start = std::time::Instant::now();
         if !ctx.wants_keyboard_input() && ctx.input().key_pressed(egui::Key::Space) {
             self.toggle_running();
+        }
+        if !ctx.wants_keyboard_input()
+            && ctx.input().modifiers.command
+            && ctx.input().key_pressed(egui::Key::Z)
+        {
+            self.undo_brush();
         }
         self.header(ctx);
         egui::TopBottomPanel::bottom("status")
@@ -552,14 +646,17 @@ impl epi::App for App {
                     ui.label(RichText::new("play / pause").size(11.0).color(theme::MUTED));
                     ui.separator();
                     ui.label(
-                        RichText::new("Experiment. Build. Let it flow.")
-                            .size(11.0)
-                            .color(theme::MUTED),
+                        RichText::new(
+                            "Scroll: zoom · Right / middle drag: pan · Cmd/Ctrl+Z: undo brush",
+                        )
+                        .size(11.0)
+                        .color(theme::MUTED),
                     );
                 });
             });
         self.toolbox(ctx);
         self.canvas(ctx);
+        self.frame_ms = frame_start.elapsed().as_secs_f32() * 1000.0;
         if self.running {
             ctx.request_repaint();
         }

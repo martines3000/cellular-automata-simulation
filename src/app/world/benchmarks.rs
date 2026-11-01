@@ -146,3 +146,83 @@ fn cpu_tick_and_ui(bencher: Bencher, size: usize) {
             black_box(harness.input(vec![]))
         });
 }
+
+// Keep the original mixed workload stable; explicitly exercise newer materials.
+fn materials_world(size: usize) -> World {
+    let mut world = fixtures::mixed_world(size, 42, true);
+    for y in 1..size - 1 {
+        for x in 1..size - 1 {
+            if (x + y * 3) % 11 < 3 {
+                world.data[[y, x]] = Cell {
+                    cell_type: [CellType::Ice, CellType::Snow, CellType::Steam][(x + y * 3) % 11],
+                    mass: if x % 2 == 0 { 1.0 } else { MAX_MASS },
+                };
+            }
+        }
+    }
+    world
+}
+
+#[divan::bench(args = [100, 256, 512, 1024])]
+fn tick_materials(bencher: Bencher, size: usize) {
+    bencher
+        .with_inputs(|| materials_world(size))
+        .bench_local_refs(|world| {
+            world.tick();
+            black_box(&world.data);
+        });
+}
+
+macro_rules! phase_bench {
+    ($name:ident, $phase:ident) => {
+        #[divan::bench(args = [100, 256, 512, 1024])]
+        fn $name(bencher: Bencher, size: usize) {
+            bencher
+                .with_inputs(|| materials_world(size))
+                .bench_local_refs(|world| {
+                    world.tmp.assign(&world.data);
+                    world.$phase();
+                    black_box(&world.data);
+                });
+        }
+    };
+}
+phase_bench!(phase_sand, update_sand);
+phase_bench!(phase_water, update_water);
+phase_bench!(phase_fire, update_fire);
+phase_bench!(phase_smoke, update_smoke);
+phase_bench!(phase_wood, update_wood);
+phase_bench!(phase_frozen, update_frozen);
+phase_bench!(phase_steam, update_steam);
+
+#[divan::bench(args = [100, 256, 512, 1024])]
+fn overview_colors_full(bencher: Bencher, size: usize) {
+    bencher
+        .with_inputs(|| drawing_input(size, false, true))
+        .bench_local_refs(|(world, _, view)| {
+            black_box(crate::app::render::overview(world, *view));
+        });
+}
+
+fn overview_ui(bencher: Bencher, size: usize, texture: bool) {
+    bencher
+        .with_inputs(|| {
+            let mut h = Harness::new();
+            h.app.world = fixtures::mixed_world(size, 42, true);
+            h.app.pending_world_size = size;
+            h.app.fast_overview = texture;
+            h.app.fit_view = true;
+            h.canvas();
+            h
+        })
+        .bench_local_refs(|h| black_box(h.input(vec![])));
+}
+
+#[divan::bench(args = [100, 256, 512, 1024])]
+fn overview_ui_texture(bencher: Bencher, size: usize) {
+    overview_ui(bencher, size, true);
+}
+#[divan::bench(args = [100, 256, 512, 1024])]
+fn overview_ui_geometry(bencher: Bencher, size: usize) {
+    overview_ui(bencher, size, false);
+}
