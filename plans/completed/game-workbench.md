@@ -1,6 +1,6 @@
 # Simulation workbench
 
-- Status: complete in the working tree; owner Codex. User authorized continued implementation, local
+- Status: complete, implementation committed as `fa8ce77`; owner Codex. User authorized continued implementation, local
   measurement, brush/visual redesign and commit/push on the existing fresh branch.
 - Baseline: `237ebc5`; historical assessments and dated research remain unchanged.
 - Scope: measure current seven-phase engine, improve rendering where measurements
@@ -49,7 +49,7 @@ Floating Ice / Steam Chamber / Snowfall labs, and a populated paused start scene
 Full check.sh passes strict Clippy/fmt/native check/build, 118 debug/release tests,
 2 ignored helpers, 0 doc tests. Final untimed smoke passes 76 cases; two final
 matched renderer runs pass. Native inspection complete; test app stopped. Historical
-evidence and dependency graph unchanged. Commit recorded in STATUS after creation.
+evidence and dependency graph unchanged. Implementation commit: `fa8ce77`; verification records accompany the branch handoff.
 
 Next: actual native GPU/frame/upload profiling, then an equivalence-tested CPU
 optimization or bounded GPU compute experiment. No compute backend or thermal

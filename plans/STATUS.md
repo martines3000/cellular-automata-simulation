@@ -7,7 +7,7 @@ Assessment: [review-report.html](../review-report.html#F04).
 
 - Owner: Codex, this chat; sole editor of `src/app/world/mod.rs`.
 - Active job: none. Workbench checks, native inspection and CPU sampling complete;
-  owned app stopped and shared lock released. Commit/push handoff follows.
+  owned app stopped and shared lock released.
   [Completed plan](completed/game-workbench.md).
 - Shared lock for cooperating workers:
   `/tmp/cellular-automata-simulation-verification.lock` (directory; owner recorded
@@ -121,7 +121,7 @@ energy and optional effects remain separate. No performance timings collected.
 
 ## Current handoff — simulation workbench
 
-Implemented in the working tree; commit/push pending final diff inspection.
+Implementation committed as `fa8ce77` on `codex/simulation-correctness-fixes`.
 [Completed plan](completed/game-workbench.md), [measurements and exact checks](../reviews/evidence/2026-11-01-workbench.md).
 Earlier timing deferrals and proposed priorities above are chronological; the user
 subsequently authorized measurement, brushes, visuals and continued implementation.

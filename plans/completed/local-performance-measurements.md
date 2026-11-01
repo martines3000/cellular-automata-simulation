@@ -1,6 +1,6 @@
 # Local performance measurements (complete)
 
-- Status: complete in the working tree. The 2026-11-01 continued-work request supersedes the earlier
+- Status: complete; implementation `fa8ce77`. The 2026-11-01 continued-work request supersedes the earlier
   "Continue setup; measure later" deferral. Coordinated by [workbench plan](game-workbench.md).
 - Scope: run the existing PERFORMANCE.md commands in a quiet exclusive local slot;
   no CI, Windows validation or dependency upgrades. Reserve the shared verification

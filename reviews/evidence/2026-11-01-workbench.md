@@ -1,8 +1,8 @@
 # Workbench measurements and regressions — 2026-11-01
 
 Baseline: `237ebc5` plus dev-only benchmark additions. Final measurements use the
-workbench implementation on the same branch; its actual commit is recorded in
-[STATUS](../../plans/STATUS.md). Historical assessment/research files are unchanged.
+workbench implementation subsequently committed as `fa8ce77` on the same branch
+(with the later undo-accounting adjustment noted below). See [STATUS](../../plans/STATUS.md). Historical assessment/research files are unchanged.
 No dependency, toolchain, phase-order or physical-coefficient changes.
 
 ## Conditions and interpretation
