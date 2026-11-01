@@ -1,0 +1,95 @@
+{
+  "verification_date": "2026-10-30",
+  "assessed_commit": "1792c2f7dc735be4663fc2f2683cf43fdc473839",
+  "provenance": "Official crates.io registry responses embedded in review-report.html; extracted without new online verification. Historical evidence, not an instruction to upgrade.",
+  "dependencies": [
+    {
+      "name": "serde",
+      "latest": "1.0.229",
+      "rust_version": "1.56",
+      "release": "2026-07-18T23:05:13.266456Z",
+      "source": "https://crates.io/api/v1/crates/serde",
+      "description": "A generic serialization/deserialization framework"
+    },
+    {
+      "name": "ndarray",
+      "latest": "0.17.2",
+      "rust_version": "1.64",
+      "release": "2026-01-10T23:19:18.256265Z",
+      "source": "https://crates.io/api/v1/crates/ndarray",
+      "description": "An n-dimensional array for general elements and for numerics. Lightweight array views and slicing; views support chunking and splitting."
+    },
+    {
+      "name": "egui",
+      "latest": "0.37.0",
+      "rust_version": "1.95",
+      "release": "2026-10-15T14:49:16.159284Z",
+      "source": "https://crates.io/api/v1/crates/egui",
+      "description": "An easy-to-use immediate mode GUI that runs on both web and native"
+    },
+    {
+      "name": "eframe",
+      "latest": "0.37.0",
+      "rust_version": "1.95",
+      "release": "2026-10-15T15:28:53.621684Z",
+      "source": "https://crates.io/api/v1/crates/eframe",
+      "description": "egui framework - write GUI apps that compiles to web and/or natively"
+    },
+    {
+      "name": "rand",
+      "latest": "0.10.3",
+      "rust_version": "1.85",
+      "release": "2026-09-20T06:37:47.850624Z",
+      "source": "https://crates.io/api/v1/crates/rand",
+      "description": "Random number generators and other randomness functionality.\n"
+    },
+    {
+      "name": "getrandom",
+      "latest": "0.4.3",
+      "rust_version": "1.85",
+      "release": "2026-06-17T18:01:59.979552Z",
+      "source": "https://crates.io/api/v1/crates/getrandom",
+      "description": "A small cross-platform library for retrieving random data from system source"
+    },
+    {
+      "name": "instant",
+      "latest": "0.1.13",
+      "rust_version": null,
+      "release": "2024-05-17T19:56:13.760985Z",
+      "source": "https://crates.io/api/v1/crates/instant",
+      "description": "Unmaintained, consider using web-time instead - A partial replacement for std::time::Instant that works on WASM to."
+    },
+    {
+      "name": "console_error_panic_hook",
+      "latest": "0.1.7",
+      "rust_version": null,
+      "release": "2021-10-11T17:01:02.936833Z",
+      "source": "https://crates.io/api/v1/crates/console_error_panic_hook",
+      "description": "A panic hook for `wasm32-unknown-unknown` that logs panics to `console.error`"
+    },
+    {
+      "name": "tracing-wasm",
+      "latest": "0.2.1",
+      "rust_version": null,
+      "release": "2021-11-07T17:52:27.786052Z",
+      "source": "https://crates.io/api/v1/crates/tracing-wasm",
+      "description": "tracing subscriber for browser WASM"
+    },
+    {
+      "name": "wasm-bindgen",
+      "latest": "0.2.130",
+      "rust_version": "1.81",
+      "release": "2026-10-30T06:15:04.504224Z",
+      "source": "https://crates.io/api/v1/crates/wasm-bindgen",
+      "description": "Easy support for interacting between JS and Rust.\n"
+    },
+    {
+      "name": "wasm-bindgen-cli",
+      "latest": "0.2.130",
+      "rust_version": "1.86",
+      "release": "2026-10-30T06:15:16.195867Z",
+      "source": "https://crates.io/api/v1/crates/wasm-bindgen-cli",
+      "description": "Command line interface of the `#[wasm_bindgen]` attribute and project. For more\ninformation see https://github.com/wasm-bindgen/wasm-bindgen.\n"
+    }
+  ]
+}

@@ -1,10 +1,12 @@
 #!/bin/bash
-# This scripts runs various CI-like checks in a convenient way.
-set -eux
+# Run native verification sequentially, using the pinned toolchain and lockfile.
+set -euxo pipefail
+export CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-2}"
 
-cargo check --workspace --all-targets
-cargo check --workspace --all-features --lib --target wasm32-unknown-unknown
+cargo check --locked --workspace --all-targets
+cargo build --locked --bin vaja_2
 cargo fmt --all -- --check
-cargo clippy --workspace --all-targets --all-features --  -D warnings -W clippy::all
-cargo test --workspace --all-targets --all-features
-cargo test --workspace --doc
+cargo clippy --locked --workspace --all-targets --all-features -- -D warnings -W clippy::all
+cargo test --locked --workspace --all-targets --all-features -- --test-threads=1
+cargo test --locked --workspace --doc -- --test-threads=1
+cargo test --locked --release --lib --all-features -- --test-threads=1

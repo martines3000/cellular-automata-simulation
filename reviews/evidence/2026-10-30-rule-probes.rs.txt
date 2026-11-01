@@ -1,0 +1,42 @@
+// Historical review-only evidence for commit 1792c2f7dc735be4663fc2f2683cf43fdc473839.
+// Not part of the application test suite. Several assertions deliberately fail on reviewed behavior.
+// Originally appended to an isolated src/app/world/mod.rs copy; includes one ignored CPU benchmark.
+
+#[cfg(test)]
+mod review_probes {
+ use super::*;
+ fn world() -> World { let mut w=World::new(7);w.add_border();w }
+ fn put(w:&mut World,y:usize,x:usize,t:CellType,m:f32){w.data[[y,x]].cell_type=t;w.data[[y,x]].mass=m;}
+ fn count(w:&World,t:CellType)->usize{w.data.iter().filter(|c|c.cell_type==t).count()}
+ fn mass(w:&World)->f32{w.data.iter().filter(|c|c.cell_type==CellType::Water).map(|c|c.mass).sum()}
+ #[test] fn fire_on_floor(){let mut w=world();put(&mut w,5,3,CellType::FireNormal,0.);w.tmp=w.data.clone();w.update_fire();assert!(count(&w,CellType::Smoke)>0);}
+ #[test] fn stacked_sand(){let mut w=world();put(&mut w,2,3,CellType::Sand,0.);put(&mut w,3,3,CellType::Sand,0.);w.tmp=w.data.clone();w.update_sand();println!("stacked sand count={}",count(&w,CellType::Sand));assert_eq!(count(&w,CellType::Sand),2);}
+ #[test] fn water_receives_before_cleanup(){let mut w=world();put(&mut w,2,3,CellType::Water,1.);put(&mut w,3,3,CellType::Water,0.005);let before=mass(&w);w.tmp=w.data.clone();w.update_water();println!("water mass {before} -> {}",mass(&w));assert!((before-mass(&w)).abs()<0.006);}
+ #[test] fn smoothing_preserves_water_mass(){let mut w=world();put(&mut w,3,3,CellType::Water,7.);w.smooth();println!("water after smoothing={}",w.data[[3,3]].mass);assert_eq!(w.data[[3,3]].mass,7.);}
+ #[test] fn smoothing_preserves_border(){let mut w=world();w.smooth();println!("top edge dirt={}",w.data.row(0).iter().filter(|c|c.cell_type==CellType::Dirt).count());assert_eq!(w.data[[0,3]].cell_type==CellType::Dirt,true);}
+ #[test] fn smooth_then_boundary_sand(){let mut w=world();w.smooth();put(&mut w,5,3,CellType::Sand,0.);w.tmp=w.data.clone();w.update_sand();w.tmp=w.data.clone();w.update_sand();}
+ #[test] fn generation_clears_mass(){let mut w=world();put(&mut w,3,3,CellType::Water,7.);w.threshold=0.;w.rand_generate();assert_eq!(w.data[[3,3]].mass,0.);}
+ #[test] fn zero_flow_does_not_duplicate_wood(){let mut w=world();put(&mut w,3,2,CellType::Water,1.);put(&mut w,4,2,CellType::Dirt,0.);put(&mut w,3,3,CellType::Wood,2.);w.tmp=w.data.clone();w.update_water();println!("wood count after zero-flow={}",count(&w,CellType::Wood));assert_eq!(count(&w,CellType::Wood),1);}
+ #[test] fn water_pushes_wood_on_both_sides(){let mut w=world();put(&mut w,3,3,CellType::Water,10.);put(&mut w,4,3,CellType::Dirt,0.);put(&mut w,3,2,CellType::Wood,0.);put(&mut w,3,4,CellType::Wood,0.);w.tmp=w.data.clone();w.update_water();assert!(w.data[[3,2]].cell_type==CellType::Water,"left wood is never accepted");}
+ #[test] fn painting_coordinate_round_trip(){let mut w=world();w.block_size=10.;w.shift=vec2(3.,4.);w.update_pos();let r=Rect::from_min_size(pos2(100.,200.),vec2(500.,500.));let p=r.min+w.pos_shift+vec2(45.,45.);let b=w.get_block_pos(p-r.min);assert_eq!(b,vec2(4.,4.));w.transform_cell(Some(p),r);assert!(w.data[[4,4]].cell_type==CellType::Water);}
+ #[test] fn shape_count_and_cell_size(){let w=World::new(100);let mut s=vec![];w.gen_shapes(&mut s,Rect::from_min_size(pos2(0.,0.),vec2(100.,100.)));println!("empty 100x100 shapes={} Cell bytes={}",s.len(),std::mem::size_of::<Cell>());assert_eq!(s.len(),10_000);}
+ #[test] fn rate_conversion(){println!("60 FPS interval={} ms; 360 FPS interval={} ms",World::fps_to_speed(60.),World::fps_to_speed(360.));}
+ #[test] fn lifting_wood_preserves_displaced_water(){let mut w=world();put(&mut w,3,3,CellType::Water,20.);put(&mut w,1,3,CellType::Water,5.);put(&mut w,2,3,CellType::Wood,0.);put(&mut w,4,3,CellType::Dirt,0.);put(&mut w,3,2,CellType::Dirt,0.);put(&mut w,3,4,CellType::Dirt,0.);put(&mut w,1,2,CellType::Dirt,0.);put(&mut w,1,4,CellType::Dirt,0.);let before=mass(&w);w.tmp=w.data.clone();w.update_water();println!("wood lift water mass {before} -> {}",mass(&w));assert!((before-mass(&w)).abs()<0.01);}
+ #[test] fn stacked_sand_blocked_diagonals(){let mut w=world();put(&mut w,2,3,CellType::Sand,0.);put(&mut w,3,3,CellType::Sand,0.);put(&mut w,3,2,CellType::Dirt,0.);put(&mut w,3,4,CellType::Dirt,0.);w.tmp=w.data.clone();w.update_sand();assert_eq!(count(&w,CellType::Sand),2);}
+ #[test] fn isolated_water_has_right_bias(){let mut w=world();put(&mut w,3,3,CellType::Water,10.);put(&mut w,4,3,CellType::Dirt,0.);w.tmp=w.data.clone();w.update_water();println!("symmetric basin mass left={} right={}",w.data[[3,2]].mass,w.data[[3,4]].mass);assert!((w.data[[3,2]].mass-w.data[[3,4]].mass).abs()<0.01);}
+
+ #[test] #[ignore] fn microbench_cpu_only(){
+  for &(n,reps) in &[(100usize,100usize),(256,100),(512,50),(1024,10)] {
+   let mut w=World::new(n);w.add_border();
+   // Empty bordered world: isolates scan/copy overhead. No GUI/GPU cost.
+   for _ in 0..5 {w.tmp=w.data.clone();w.update_sand();w.tmp=w.data.clone();w.update_water();w.tmp=w.data.clone();w.update_fire();w.tmp=w.data.clone();w.update_smoke();w.tmp=w.data.clone();w.update_wood();}
+   let mut times=vec![];let mut shape_times=vec![];let mut shape_count=0;
+   for _ in 0..reps {
+    let t=std::time::Instant::now();w.tmp=w.data.clone();w.update_sand();w.tmp=w.data.clone();w.update_water();w.tmp=w.data.clone();w.update_fire();w.tmp=w.data.clone();w.update_smoke();w.tmp=w.data.clone();w.update_wood();std::hint::black_box(&w);times.push(t.elapsed().as_secs_f64()*1000.);
+    let t=std::time::Instant::now();let mut shapes=Vec::new();w.gen_shapes(&mut shapes,Rect::from_min_size(pos2(0.,0.),vec2(600.,600.)));shape_count=shapes.len();std::hint::black_box(&shapes);shape_times.push(t.elapsed().as_secs_f64()*1000.);
+   }
+   times.sort_by(f64::total_cmp);shape_times.sort_by(f64::total_cmp);println!("BENCH n={n} reps={reps} tick_median_ms={:.4} shapes_median_ms={:.4} shapes={shape_count}",times[reps/2],shape_times[reps/2]);
+  }
+ }
+
+}
