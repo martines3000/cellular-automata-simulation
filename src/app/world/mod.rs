@@ -99,10 +99,6 @@ impl World {
         }
     }
 
-    pub fn toggle_shift(&mut self) {
-        self.use_shift = !self.use_shift;
-    }
-
     pub fn gen_shapes(&self, shapes: &mut Vec<Shape>, rect: Rect) {
         if !rect.is_finite()
             || !rect.is_positive()
@@ -628,6 +624,11 @@ impl World {
             self.tick();
         }
         steps
+    }
+
+    pub(super) fn step_once(&mut self) {
+        self.tick();
+        self.reset_timing();
     }
 
     fn tick(&mut self) {

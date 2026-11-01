@@ -4,28 +4,23 @@ use egui::{Event, FullOutput, Modifiers, PointerButton};
 
 fn canvas_visible(output: &FullOutput) -> bool {
     output.shapes.iter().any(|shape| {
-        matches!(&shape.1, Shape::Rect(rect) if rect.fill == Color32::WHITE
+        matches!(&shape.1, Shape::Rect(rect) if rect.fill == crate::app::theme::CANVAS
             && rect.rect.width() > 200.0 && rect.rect.height() > 200.0)
     })
 }
 
-fn collapse_button(h: &mut Harness) -> Pos2 {
-    let canvas = h.canvas();
+fn settings_button(h: &mut Harness) -> Pos2 {
+    h.canvas();
     h.input(vec![])
         .shapes
         .iter()
         .find_map(|shape| match &shape.1 {
-            Shape::Path(path) if path.points.len() == 3 => {
-                let center = Rect::from_points(&path.points).center();
-                (center.x >= canvas.left()
-                    && center.x < canvas.left() + 30.0
-                    && center.y < canvas.top()
-                    && center.y > canvas.top() - 40.0)
-                    .then_some(center)
+            Shape::Text(text) if text.galley.text() == "Pan view" => {
+                Some(text.pos + text.galley.size() * 0.5)
             }
             _ => None,
         })
-        .expect("Display collapse arrow")
+        .expect("Pan view settings header")
 }
 
 fn pointer_button(pos: Pos2, pressed: bool) -> Vec<Event> {
@@ -51,13 +46,13 @@ fn sealed_smoke() -> World {
 }
 
 #[test]
-fn display_visibility_running_world_advances_through_collapse_and_reopen() {
+fn game_ui_running_world_advances_once_while_settings_open_and_close() {
     let mut h = Harness::new();
-    let arrow = collapse_button(&mut h);
+    let arrow = settings_button(&mut h);
     h.app.world = sealed_smoke();
     h.app.running = true;
     let mut expected = sealed_smoke();
-    // Include all animation frames, fully collapsed frames, and reopening.
+    // Settings animation must neither suspend nor duplicate simulation updates.
     for (frame, events) in [
         vec![],
         pointer_button(arrow, true),
@@ -84,27 +79,23 @@ fn display_visibility_running_world_advances_through_collapse_and_reopen() {
         );
         assert!(h.app.world.tmp == expected.tmp, "scratch frame {frame}");
         assert!(output.needs_repaint);
-        if frame == 5 {
-            assert!(
-                !canvas_visible(&output),
-                "fixture must fully collapse Display"
-            );
-        } else if frame == 9 {
-            assert!(canvas_visible(&output), "fixture must reopen Display");
-        }
+        assert!(
+            canvas_visible(&output),
+            "canvas remains visible at frame {frame}"
+        );
     }
 }
 
 #[test]
-fn display_visibility_paused_world_stays_frozen_in_both_states() {
+fn game_ui_paused_world_stays_frozen_with_settings_open_or_closed() {
     for collapsed in [false, true] {
         let mut h = Harness::new();
-        let arrow = collapse_button(&mut h);
+        let arrow = settings_button(&mut h);
         if collapsed {
             h.button(arrow, PointerButton::Primary, true);
             h.button(arrow, PointerButton::Primary, false);
         }
-        for _ in 0..5 {
+        for _ in 0..20 {
             h.input(vec![]);
         }
         h.app.world = sealed_smoke();
@@ -114,13 +105,13 @@ fn display_visibility_paused_world_stays_frozen_in_both_states() {
         let output = h.input(vec![]);
         assert!(h.app.world.data == before);
         assert_eq!(h.app.world.last_frame_time, clock);
-        assert_eq!(canvas_visible(&output), !collapsed);
+        assert!(canvas_visible(&output));
         assert!(!output.needs_repaint);
     }
 }
 
 #[test]
-fn display_visibility_painting_happens_before_running_tick() {
+fn game_ui_painting_happens_before_running_tick() {
     let mut h = Harness::new();
     let rect = h.canvas();
     h.app.world = World::new(7);
@@ -131,4 +122,63 @@ fn display_visibility_painting_happens_before_running_tick() {
     h.input(pointer_button(rect.min + vec2(17.5, 12.5), true));
     assert!(h.app.world.data[[2, 3]].cell_type == CellType::None);
     assert!(h.app.world.data[[5, 3]].cell_type == CellType::Wood);
+}
+
+#[test]
+fn game_ui_step_advances_exactly_once_and_resets_timing() {
+    let mut h = Harness::new();
+    h.canvas();
+    let pos = h
+        .input(vec![])
+        .shapes
+        .iter()
+        .find_map(|shape| match &shape.1 {
+            Shape::Text(text) if text.galley.text() == "Step" => {
+                Some(text.pos + text.galley.size() * 0.5)
+            }
+            _ => None,
+        })
+        .expect("Step control");
+    h.app.world = sealed_smoke();
+    h.app.world.step_credit = NANOS_PER_SECOND / 2;
+    h.app.world.last_frame_time = Instant::now() - Duration::from_secs(100);
+    let mut expected = sealed_smoke();
+    expected.tick();
+    h.button(pos, PointerButton::Primary, true);
+    h.button(pos, PointerButton::Primary, false);
+    assert!(!h.app.running);
+    assert!(h.app.world.data == expected.data);
+    assert!(h.app.world.tmp == expected.tmp);
+    assert_eq!(h.app.world.step_credit, 0);
+    assert!(h.app.world.last_frame_time.elapsed() < Duration::from_secs(1));
+}
+
+#[test]
+fn game_ui_step_is_disabled_during_playback() {
+    let mut h = Harness::new();
+    h.canvas();
+    let pos = h
+        .input(vec![])
+        .shapes
+        .iter()
+        .find_map(|shape| match &shape.1 {
+            Shape::Text(text) if text.galley.text() == "Step" => {
+                Some(text.pos + text.galley.size() * 0.5)
+            }
+            _ => None,
+        })
+        .expect("Step control");
+    h.app.world = sealed_smoke();
+    h.app.running = true;
+    let mut expected = sealed_smoke();
+    for pressed in [true, false] {
+        h.app.world.last_frame_time = Instant::now() - Duration::from_secs(100);
+        h.button(pos, PointerButton::Primary, pressed);
+        for _ in 0..MAX_STEPS_PER_UPDATE {
+            expected.tick();
+        }
+        assert!(h.app.world.data == expected.data);
+        assert!(h.app.world.tmp == expected.tmp);
+        assert!(h.app.running);
+    }
 }

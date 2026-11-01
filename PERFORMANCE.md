@@ -47,6 +47,11 @@ it does in the app. No large traces/results are committed.
 | tessellate_basin_full | egui CPU tessellation of prebuilt basin shapes; no input clone. |
 | cpu_tick_and_ui | One explicit tick plus a settled, paused egui App frame; no GPU/presentation. |
 
+The 2026-11-01 UI redesign changes `cpu_tick_and_ui`'s interface and its harness
+window to 1280×820 points. Compare that case only with matching UI/viewport
+conditions; historical UI cases are not isolated renderer comparisons. Core tick,
+copy and world-shape cases retain their workloads.
+
 Reported times exclude input setup, but consume output through black_box. Full-view
 cases are scaling stress cases, not the default application zoom. Keep workload,
 visible area, compiler/profile, lock hash, hardware and power/background conditions

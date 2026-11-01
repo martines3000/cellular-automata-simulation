@@ -1,14 +1,14 @@
 # Implementation status
 
-Updated: 2026-10-31. Historical baseline: master at `1792c2f`.
+Updated: 2026-11-01. Historical baseline: master at `1792c2f`.
 Assessment: [review-report.html](../review-report.html#F04).
 
 ## Verification coordination
 
 - Owner: Codex, this chat; sole editor of `src/app/world/mod.rs`.
-- Active job: none. Release build passed; user testing ended at the user's request.
-  Process inventory confirms no simulator is running; shared build lock released.
-  Timed sampling remains deferred at the user's explicit request.
+- Active job: none. Game UI local checks and native inspection complete; owned
+  app stopped, shared lock released. Timed sampling remains deferred at the
+  user's explicit request.
 - Shared lock for cooperating workers:
   `/tmp/cellular-automata-simulation-verification.lock` (directory; owner recorded
   inside). Inspect process inventory before acquiring; never remove another owner's
@@ -62,8 +62,8 @@ warning. Dependency migration remains separate. Browser delivery was removed
 
 All sixteen historical findings are implemented or retired by browser removal.
 Historical reports and extracted evidence remain byte-for-byte unchanged. Counts
-in earlier rows describe those commits; current suite contains 65 correctness
-tests plus 2 ignored performance helpers.
+in earlier rows describe those commits; current suite contains 72 correctness
+tests plus 2 ignored performance helpers (including the game UI follow-up below).
 
 [Completed native follow-up](completed/native-polish.md) and
 [Display visibility fix](completed/display-visibility.md) retain their earlier
@@ -75,3 +75,17 @@ then profile native frames/decide any further engine or renderer work from evide
 dependency compatibility remains separate (historical quick-xml warning). Windows
 support is removed from the backlog; CI remains removed. Benchmark tools and GPU
 tradeoffs are in [PERFORMANCE.md](../PERFORMANCE.md) and its linked research.
+
+Latest follow-up (2026-11-01): [Game interface and material direction](completed/game-ui.md)
+implemented and validated in the working tree, awaiting commit/push. Fixed game
+layout, material cards/swatches, playback/step/Space controls, Fit world and optional
+guides. `bash check.sh` passes strict Clippy/fmt/native build/check, 72 debug and 72
+release correctness tests, 2 ignored helpers, 0 doc tests. Non-timing smoke passes
+all 32 benchmark cases. Native selection/paint/playback/terrain/palette reviewed;
+compact layout and scrolling tested headlessly. Historical evidence unchanged.
+
+Next design work: [Ice/Snow/Steam/Lava/Acid](../reviews/research/2026-11-01-materials.md)
+requires explicit heat/species budgets before implementation; later Stone/Oil/Glass/
+Plants/Salt. [Visual roadmap](../reviews/research/2026-11-01-visual-direction.md)
+proposes finite feedback, material effects and presets, with profiling before
+renderer/GPU changes. These are researched proposals, not implemented features.
