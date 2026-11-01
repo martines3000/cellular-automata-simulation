@@ -77,7 +77,7 @@ support is removed from the backlog; CI remains removed. Benchmark tools and GPU
 tradeoffs are in [PERFORMANCE.md](../PERFORMANCE.md) and its linked research.
 
 Latest follow-up (2026-11-01): [Game interface and material direction](completed/game-ui.md)
-implemented and validated in the working tree, awaiting commit/push. Fixed game
+committed/pushed as `e14c62c` on `codex/simulation-correctness-fixes`. Fixed game
 layout, material cards/swatches, playback/step/Space controls, Fit world and optional
 guides. `bash check.sh` passes strict Clippy/fmt/native build/check, 72 debug and 72
 release correctness tests, 2 ignored helpers, 0 doc tests. Non-timing smoke passes

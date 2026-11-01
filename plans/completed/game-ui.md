@@ -1,6 +1,6 @@
 # Game interface and material direction
 
-- Status: complete in the working tree, 2026-11-01; owner: Codex this chat.
+- Status: complete, committed/pushed as e14c62c, 2026-11-01; owner: Codex this chat.
 - Context: user authorized a full native UI redesign and parallel research into
   five new materials, five later materials, and a more polished game aesthetic.
 - Scope: native egui 0.17 interface, presentation, interaction regressions and
@@ -16,7 +16,7 @@
 - [x] Verify input routing, pause/step, resize safety, compact layout and idle work.
 - [x] Finish native visual inspection, local checks and documentation.
 - [x] Review diff and preserve historical evidence.
-- [ ] Commit/push and hand off.
+- [x] Commit/push and hand off (`e14c62c`, same authorized branch).
 
 ## Decisions, discoveries and assumptions
 
@@ -70,7 +70,7 @@ and release only its verification lock. No clean/reset commands.
 
 ## Outcomes and supporting evidence
 
-Implemented in the working tree: fixed panels instead of overlapping windows;
+Implemented in `e14c62c`: fixed panels instead of overlapping windows;
 explicit playback/step controls, focus-aware Space shortcut, scrollable named
 palette, tool descriptions, Fit world (including window resize), sub-cell zoom,
 optional guides and a presentation-only material palette. The core phase schedule,
@@ -89,5 +89,5 @@ while settings expand/collapse.
 The five researched next materials and five later ideas are not implemented. Heat/
 species state must be designed before phase changes; renderer/effects work should
 follow profiling. The four protected historical assessment/evidence files remain
-unchanged; no unrelated starting edits existed. Commit will be recorded after it
-exists.
+unchanged; no unrelated starting edits existed. Code and research are committed
+and pushed as `e14c62c` on `codex/simulation-correctness-fixes`.
