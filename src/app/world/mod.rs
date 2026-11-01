@@ -1,4 +1,14 @@
 pub mod cell;
+mod frozen;
+
+#[cfg(test)]
+mod frozen_tests;
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum PhaseTool {
+    Freeze,
+    Melt,
+}
 
 #[cfg(test)]
 mod tests;
@@ -35,7 +45,9 @@ use std::{
     time::{Duration, Instant},
 };
 
-use egui::{pos2, vec2, Color32, Pos2, Rect, Rounding, Shape, Vec2};
+#[cfg(test)]
+use egui::pos2;
+use egui::{vec2, Color32, Pos2, Rect, Rounding, Shape, Vec2};
 use ndarray::Array2;
 
 use cell::*;
@@ -548,6 +560,17 @@ impl World {
                 if self.data[[y, x]].cell_type.eq(&CellType::FireNormal)
                     || self.data[[y, x]].cell_type.eq(&CellType::FireBurn)
                 {
+                    for (dy, dx) in SMALL_NEIGHBOURHOOD {
+                        let ny = y as i32 + dy;
+                        let nx = x as i32 + dx;
+                        if ny >= 0
+                            && nx >= 0
+                            && ny < self.data.nrows() as i32
+                            && nx < self.data.ncols() as i32
+                        {
+                            Self::melt_cell(&mut self.tmp[[ny as usize, nx as usize]]);
+                        }
+                    }
                     if self.data[[y + 1, x]].cell_type.eq(&CellType::None) {
                         self.move_into_empty([y, x], [y + 1, x], CellType::FireNormal, 0.0);
                     } else {
@@ -650,6 +673,9 @@ impl World {
         // Wood
         self.tmp.assign(&self.data);
         self.update_wood();
+
+        self.tmp.assign(&self.data);
+        self.update_frozen();
     }
 
     pub fn clear(&mut self) {
@@ -681,31 +707,35 @@ impl World {
         self.pos_shift.y = -self.block_size * self.shift.y;
     }
 
-    pub fn transform_cell(&mut self, pointer_pos: Option<Pos2>, clip_rect: Rect) {
-        if let Some(pos) = pointer_pos {
-            if !clip_rect.contains(pos) || pos.x >= clip_rect.max.x || pos.y >= clip_rect.max.y {
-                return;
-            }
-            let block = self.get_block_pos(pos - pos2(clip_rect.left(), clip_rect.top()));
+    fn editable_index(&self, pointer_pos: Option<Pos2>, clip_rect: Rect) -> Option<[usize; 2]> {
+        let pos = pointer_pos?;
+        if !clip_rect.contains(pos) || pos.x >= clip_rect.max.x || pos.y >= clip_rect.max.y {
+            return None;
+        }
+        let block = self.get_block_pos(pos - clip_rect.min);
+        self.bounds_valid(block)
+            .then_some([block.y as usize, block.x as usize])
+    }
 
-            if self.bounds_valid(block) {
-                if self.selected_cell_type.ne(&CellType::Water) {
-                    self.data[[block.y as usize, block.x as usize]].cell_type =
-                        self.selected_cell_type;
-                    self.data[[block.y as usize, block.x as usize]].mass = 0f32;
-                } else if self.data[[block.y as usize, block.x as usize]]
-                    .cell_type
-                    .eq(&CellType::None)
-                {
-                    self.data[[block.y as usize, block.x as usize]].cell_type =
-                        self.selected_cell_type;
-                    self.data[[block.y as usize, block.x as usize]].mass = 1f32;
-                } else if self.data[[block.y as usize, block.x as usize]]
-                    .cell_type
-                    .eq(&CellType::Water)
-                {
-                    self.data[[block.y as usize, block.x as usize]].mass += 2f32;
-                }
+    pub fn transform_cell(&mut self, pointer_pos: Option<Pos2>, clip_rect: Rect) {
+        let Some(index) = self.editable_index(pointer_pos, clip_rect) else {
+            return;
+        };
+        let cell = &mut self.data[index];
+        match self.selected_cell_type {
+            CellType::Water if cell.cell_type == CellType::None => {
+                cell.cell_type = CellType::Water;
+                cell.mass = 1.0;
+            }
+            CellType::Water if cell.cell_type == CellType::Water => cell.mass += 2.0,
+            CellType::Water => {}
+            material => {
+                cell.cell_type = material;
+                cell.mass = match material {
+                    CellType::Ice => MAX_MASS,
+                    CellType::Snow => 1.0,
+                    _ => 0.0,
+                };
             }
         }
     }

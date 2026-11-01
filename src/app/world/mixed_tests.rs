@@ -4,8 +4,7 @@ fn water_mass(world: &World) -> f64 {
     world
         .data
         .iter()
-        .filter(|cell| matches!(cell.cell_type, CellType::None | CellType::Water))
-        .map(|cell| f64::from(cell.mass))
+        .map(|cell| f64::from(cell.water_quantity()))
         .sum()
 }
 
@@ -114,7 +113,7 @@ fn assert_state(world: &World, solids: &[((usize, usize), Cell)], context: &str)
     }
 }
 
-fn checked_tick(world: &mut World, context: &str) {
+pub(super) fn checked_tick(world: &mut World, context: &str) {
     let solids: Vec<_> = world
         .data
         .indexed_iter()
@@ -128,6 +127,7 @@ fn checked_tick(world: &mut World, context: &str) {
         ("fire", World::update_fire),
         ("smoke", World::update_smoke),
         ("wood", World::update_wood),
+        ("frozen", World::update_frozen),
     ] {
         let before = water_mass(world);
         let wood = count(world, CellType::Wood);

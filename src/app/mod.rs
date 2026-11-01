@@ -9,8 +9,8 @@ use eframe::{
     epi,
 };
 use egui::{pos2, vec2, Rect};
-use world::cell::CellType;
-use world::World;
+use world::cell::{CellType, ICE_COLOR, SNOW_COLOR};
+use world::{PhaseTool, World};
 
 pub struct App {
     running: bool,
@@ -19,9 +19,10 @@ pub struct App {
     pending_world_size: usize,
     fit_view: bool,
     show_grid: bool,
+    phase_tool: Option<PhaseTool>,
 }
 
-const MATERIALS: [(CellType, &str, &str, Color32); 6] = [
+const MATERIALS: [(CellType, &str, &str, Color32); 8] = [
     (
         CellType::Water,
         "Water",
@@ -53,6 +54,18 @@ const MATERIALS: [(CellType, &str, &str, Color32); 6] = [
         theme::FIRE,
     ),
     (
+        CellType::Ice,
+        "Ice",
+        "Falls through air, floats in water. Fire or Melt returns its water.",
+        ICE_COLOR,
+    ),
+    (
+        CellType::Snow,
+        "Snow",
+        "Light powder. Melts beside water or fire; one water unit per cell.",
+        SNOW_COLOR,
+    ),
+    (
         CellType::None,
         "Eraser",
         "Removes a cell. The outer border is protected.",
@@ -70,6 +83,7 @@ impl Default for App {
             pending_world_size: num_of_blocks,
             fit_view: true,
             show_grid: false,
+            phase_tool: None,
         }
     }
 }
@@ -170,7 +184,8 @@ impl App {
                         ui.horizontal(|ui| {
                             let width = (ui.available_width() - ui.spacing().item_spacing.x) / 2.0;
                             for &(kind, name, description, color) in pair {
-                                let selected = self.world.selected_cell_type == kind;
+                                let selected = self.phase_tool.is_none()
+                                    && self.world.selected_cell_type == kind;
                                 let label =
                                     RichText::new(name).size(14.0).color(theme::TEXT).strong();
                                 let response = ui.add_sized(
@@ -192,22 +207,52 @@ impl App {
                                 );
                                 if response.on_hover_text(description).clicked() {
                                     self.world.selected_cell_type = kind;
+                                    self.phase_tool = None;
                                 }
                             }
                         });
                     }
-                    let (_, name, description, _) = MATERIALS
+                    ui.horizontal(|ui| {
+                        for (tool, name) in
+                            [(PhaseTool::Freeze, "Freeze"), (PhaseTool::Melt, "Melt")]
+                        {
+                            let selected = self.phase_tool == Some(tool);
+                            if ui
+                                .add(Button::new(name).sense(Sense::click_and_drag()).stroke(
+                                    Stroke::new(
+                                        if selected { 2.0 } else { 1.0 },
+                                        if selected { theme::ACCENT } else { theme::LINE },
+                                    ),
+                                ))
+                                .clicked()
+                            {
+                                self.phase_tool = Some(tool);
+                            }
+                        }
+                    });
+                    let (_, material_name, material_description, _) = MATERIALS
                         .iter()
                         .find(|(kind, _, _, _)| *kind == self.world.selected_cell_type)
                         .unwrap_or(&MATERIALS[0]);
+                    let (name, description) = match self.phase_tool {
+                        Some(PhaseTool::Freeze) => (
+                            "Freeze",
+                            "Turns existing water into ice without changing its quantity.",
+                        ),
+                        Some(PhaseTool::Melt) => (
+                            "Melt",
+                            "Returns ice or snow to water. No material is added or removed.",
+                        ),
+                        None => (*material_name, *material_description),
+                    };
                     egui::Frame::none()
                         .fill(theme::BACKGROUND)
                         .rounding(6.0)
                         .margin(egui::style::Margin::same(10.0))
                         .show(ui, |ui| {
                             ui.set_min_width(ui.available_width());
-                            ui.label(RichText::new(*name).strong());
-                            ui.label(RichText::new(*description).size(12.0).color(theme::MUTED));
+                            ui.label(RichText::new(name).strong());
+                            ui.label(RichText::new(description).size(12.0).color(theme::MUTED));
                         });
                     ui.add_space(10.0);
                     section(ui, "02", "VIEW & SIMULATION");
@@ -374,8 +419,13 @@ impl App {
                 if response.dragged_by(egui::PointerButton::Primary)
                     || (response.clicked() && primary_pressed)
                 {
-                    self.world
-                        .transform_cell(response.interact_pointer_pos(), rect);
+                    if let Some(tool) = self.phase_tool {
+                        self.world
+                            .apply_phase_brush(response.interact_pointer_pos(), rect, tool);
+                    } else {
+                        self.world
+                            .transform_cell(response.interact_pointer_pos(), rect);
+                    }
                 }
                 if self.running {
                     self.world.update();

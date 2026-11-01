@@ -181,6 +181,7 @@ fn canvas_reuses_shape_storage_after_submitting_each_frame() {
 #[test]
 fn canvas_world_resize_requires_paused_confirmation() {
     let mut h = Harness::new();
+    h.screen_size = vec2(1280.0, 1000.0); // Full toolbox; scrolling has its own test.
     h.canvas();
     h.app.pending_world_size = 256;
     for running in [true, false] {
@@ -335,4 +336,64 @@ fn game_ui_short_window_scroll_reaches_resize_controls() {
     h.button(pos, PointerButton::Primary, true);
     h.button(pos, PointerButton::Primary, false);
     assert_eq!(h.app.world.data.dim(), (256, 256));
+}
+
+#[test]
+fn frozen_ui_material_and_phase_tools_route_without_creating_extra_water() {
+    let mut h = Harness::new();
+    let rect = h.canvas();
+    let cell_pos = rect.min + vec2(17.5, 17.5);
+    for (label, expected, amount) in [
+        ("Ice", CellType::Ice, 10.0),
+        ("Melt", CellType::Water, 10.0),
+        ("Freeze", CellType::Ice, 10.0),
+        ("Snow", CellType::Snow, 1.0),
+        ("Melt", CellType::Water, 1.0),
+    ] {
+        let before_selection = h.app.world.data.clone();
+        let pos = text_position(&h.input(vec![]), label);
+        h.button(pos, PointerButton::Primary, true);
+        h.button(pos, PointerButton::Primary, false);
+        assert!(h.app.world.data == before_selection);
+        h.button(cell_pos, PointerButton::Primary, true);
+        h.button(cell_pos, PointerButton::Primary, false);
+        let cell = h.app.world.data[[3, 3]];
+        assert!(cell.cell_type == expected, "tool {label}");
+        assert_eq!(cell.water_quantity(), amount, "tool {label}");
+    }
+    let pos = text_position(&h.input(vec![]), "Sand");
+    h.button(pos, PointerButton::Primary, true);
+    h.button(pos, PointerButton::Primary, false);
+    assert!(h.app.phase_tool.is_none());
+    h.button(cell_pos, PointerButton::Primary, true);
+    h.button(cell_pos, PointerButton::Primary, false);
+    assert!(h.app.world.data[[3, 3]].cell_type == CellType::Sand);
+}
+
+#[test]
+fn frozen_ui_brush_transforms_under_zoom_pan_and_ignores_secondary_clicks() {
+    let mut h = Harness::new();
+    h.app.world.block_size = 10.0;
+    h.app.world.shift = vec2(2.0, 1.0);
+    h.app.world.update_pos();
+    h.app.world.data[[5, 6]] = world::cell::Cell {
+        cell_type: CellType::Water,
+        mass: 25.0,
+    };
+    h.app.phase_tool = Some(PhaseTool::Freeze);
+    let rect = h.canvas();
+    let pos = rect.min + h.app.world.pos_shift + vec2(65.0, 55.0);
+    let before = h.app.world.data.clone();
+    h.button(pos, PointerButton::Secondary, true);
+    h.button(pos, PointerButton::Secondary, false);
+    assert!(h.app.world.data == before);
+    h.button(pos, PointerButton::Primary, true);
+    h.button(pos, PointerButton::Primary, false);
+    assert!(h.app.world.data[[5, 6]].cell_type == CellType::Ice);
+    assert_eq!(h.app.world.data[[5, 6]].mass, 25.0);
+    for ((y, x), cell) in h.app.world.data.indexed_iter() {
+        if [y, x] != [5, 6] {
+            assert!(*cell == before[[y, x]]);
+        }
+    }
 }

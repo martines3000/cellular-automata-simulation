@@ -6,6 +6,8 @@
   - Sand
   - Wood
   - Fire
+  - Ice
+  - Snow
 
 ## Run natively
 
@@ -41,8 +43,8 @@ tracked in [plans/STATUS.md](plans/STATUS.md).
 ## Playing
 
 The fixed palette and canvas keep controls separate from the world. Choose Water,
-Sand, Dirt, Wood, Fire or Eraser, then click or drag on the canvas. The selected
-material has a mint outline and a short behavior description; borders are protected.
+Sand, Dirt, Wood, Fire, Ice, Snow or Eraser, then click or drag on the canvas. The
+selected material has a mint outline and a short behavior description; borders are protected.
 
 Use **Play / Pause** or **Space** to control playback. **Step** advances exactly one
 step while paused. Space respects keyboard focus in editable controls. Paused
@@ -51,6 +53,24 @@ frames settle without a continuous decorative animation loop.
 **Fit world** shows the whole grid and follows window resizing. Adjusting Zoom or
 Pan view leaves fit mode. **Fractional surfaces** draws water heights and floating
 wood; **Guide grid** adds optional view guides. Both affect presentation only.
+
+## Ice, Snow and water conservation
+
+**Ice** falls through empty space, rises one cell at a time through water, and
+rests on the surface. **Snow** falls and slides into piles; contact with Water
+melts it. Fire melts adjacent Ice and Snow. These are scripted game interactions,
+without a temperature or energy solver.
+
+The **Freeze** tool turns existing Water (including passive water residue) into
+Ice. **Melt** returns Ice/Snow to Water. Neither tool changes the stored quantity;
+repeat applications do not add material. Melted amounts below the active-water
+threshold remain passive water in the empty cell, preserving that residue. The
+existing small-Water cleanup still has its explicitly tested loss budget.
+
+Painting places 10 water units per Ice cell and 1 per Snow cell; repainting replaces
+the cell rather than accumulating frozen quantity. Erasing/replacing a frozen cell
+removes its contents deliberately. Select a material again to leave Freeze/Melt.
+Tools work while paused or playing and protect the outer border.
 
 ## Larger worlds and terrain
 
@@ -87,7 +107,8 @@ native frames before changing the renderer or simulation backend.
 [Material research](reviews/research/2026-11-01-materials.md) defines five proposed
 next elements (Ice, Snow, Steam, Lava and Acid) and five later ideas (Stone, Oil,
 Glass, Plants and Salt), including quantity/heat prerequisites and regression
-contracts. These are proposals, not currently available materials.
+contracts. Ice/Snow and scripted phase tools are now implemented; Steam/Lava/Acid
+remain proposals and require additional transport/reaction state.
 
 [Visual direction](reviews/research/2026-11-01-visual-direction.md) records the
 native theme and staged ideas for subtle material effects, presets and optional

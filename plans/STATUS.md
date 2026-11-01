@@ -6,9 +6,8 @@ Assessment: [review-report.html](../review-report.html#F04).
 ## Verification coordination
 
 - Owner: Codex, this chat; sole editor of `src/app/world/mod.rs`.
-- Active job: none. Game UI local checks and native inspection complete; owned
-  app stopped, shared lock released. Timed sampling remains deferred at the
-  user's explicit request.
+- Active job: none. Frozen-water local/native checks complete, owned app stopped
+  and shared lock released. Timed sampling remains deferred at the user's request.
 - Shared lock for cooperating workers:
   `/tmp/cellular-automata-simulation-verification.lock` (directory; owner recorded
   inside). Inspect process inventory before acquiring; never remove another owner's
@@ -62,8 +61,8 @@ warning. Dependency migration remains separate. Browser delivery was removed
 
 All sixteen historical findings are implemented or retired by browser removal.
 Historical reports and extracted evidence remain byte-for-byte unchanged. Counts
-in earlier rows describe those commits; current suite contains 72 correctness
-tests plus 2 ignored performance helpers (including the game UI follow-up below).
+in earlier rows describe those commits; current suite contains 88 correctness
+tests plus 2 ignored performance helpers (including the follow-ups below).
 
 [Completed native follow-up](completed/native-polish.md) and
 [Display visibility fix](completed/display-visibility.md) retain their earlier
@@ -89,3 +88,16 @@ requires explicit heat/species budgets before implementation; later Stone/Oil/Gl
 Plants/Salt. [Visual roadmap](../reviews/research/2026-11-01-visual-direction.md)
 proposes finite feedback, material effects and presets, with profiling before
 renderer/GPU changes. These are researched proposals, not implemented features.
+
+Latest material follow-up: [Frozen water](completed/frozen-water.md), implemented
+and verified in the working tree. Ice/Snow preserve water-equivalent quantities;
+Freeze/Melt tools, falling/floating/piling and scripted fire/water-contact melting
+are integrated. Full local checks pass: 88 debug/release correctness tests,
+strict Clippy/fmt, native debug/release builds, 0 doc tests; 2 ignored helpers.
+Separate non-timing workload smoke passes all 32 cases. Native Ice/Melt/Freeze
+presentation checked. Cell stays 8 B; no dependencies changed. Awaiting commit/push.
+
+Next bounded material task: conserved Steam transport and condensation, separate
+from Smoke lifetime; real thermal energy, Lava/Acid and visual effects remain
+separate increments. The dated research stays historical; Ice/Snow are now shipped
+through the scripted rules described in README. Timings remain deferred.

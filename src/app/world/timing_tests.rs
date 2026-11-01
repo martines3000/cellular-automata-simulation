@@ -173,6 +173,7 @@ fn timing_due_tick_preserves_production_material_phase_order() {
         World::update_fire,
         World::update_smoke,
         World::update_wood,
+        World::update_frozen,
     ] {
         expected.tmp = expected.data.clone();
         update(&mut expected);

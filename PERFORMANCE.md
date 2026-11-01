@@ -38,7 +38,7 @@ it does in the app. No large traces/results are committed.
 
 | Case | Timed operation |
 | --- | --- |
-| copy_grid | One data→scratch copy; each complete tick performs five. |
+| copy_grid | One data→scratch copy; each complete tick now performs six (including frozen materials). |
 | tick_empty | One full tick with only Dirt border/empty interior. |
 | tick_mixed | One full tick of the seeded all-material fixture. |
 | shapes_mixed_full | Shape generation for the whole grid at one pixel/cell. |
@@ -49,8 +49,12 @@ it does in the app. No large traces/results are committed.
 
 The 2026-11-01 UI redesign changes `cpu_tick_and_ui`'s interface and its harness
 window to 1280×820 points. Compare that case only with matching UI/viewport
-conditions; historical UI cases are not isolated renderer comparisons. Core tick,
-copy and world-shape cases retain their workloads.
+conditions; historical UI cases are not isolated renderer comparisons. Core copy
+and world-shape cases retain their workloads. The frozen-water follow-up
+adds an Ice/Snow phase to every tick; historical tick/UI timings would therefore
+compare different engine work. Existing mixed benchmark fixtures retain the old
+material distribution, while frozen-material stress belongs to correctness tests;
+add a separately named frozen benchmark when timing this feature is authorized.
 
 Reported times exclude input setup, but consume output through black_box. Full-view
 cases are scaling stress cases, not the default application zoom. Keep workload,
