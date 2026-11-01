@@ -8,6 +8,7 @@
   - Fire
   - Ice
   - Snow
+  - Steam
 
 ## Run natively
 
@@ -43,7 +44,7 @@ tracked in [plans/STATUS.md](plans/STATUS.md).
 ## Playing
 
 The fixed palette and canvas keep controls separate from the world. Choose Water,
-Sand, Dirt, Wood, Fire, Ice, Snow or Eraser, then click or drag on the canvas. The
+Sand, Dirt, Wood, Fire, Ice, Snow, Steam or Eraser, then click or drag on the canvas. The
 selected material has a mint outline and a short behavior description; borders are protected.
 
 Use **Play / Pause** or **Space** to control playback. **Step** advances exactly one
@@ -71,6 +72,26 @@ Painting places 10 water units per Ice cell and 1 per Snow cell; repainting repl
 the cell rather than accumulating frozen quantity. Erasing/replacing a frozen cell
 removes its contents deliberately. Select a material again to leave Freeze/Melt.
 Tools work while paused or playing and protect the outer border.
+
+## Steam and condensation
+
+**Steam** rises through air or water and drifts diagonally or sideways around
+obstacles. Water displaced by a bubble keeps its quantity. Trapped Steam has no
+lifetime and never evaporates from the simulation, even at tiny quantities.
+
+Fire vaporizes adjacent liquid Water. Steam condenses in place beside Ice/Snow;
+the cold solid is unchanged. The **Vaporize** and **Condense** tools perform the
+same conserved water/Steam transitions directly. Condensed amounts below the
+active-water threshold remain passive water; nothing is lost by conversion.
+Painting Steam places 1 water unit and replaces the old contents, while erasing
+removes them. Select a material to leave a phase tool.
+
+These are scripted interactions without heat/energy, gas expansion or pressure.
+Dirt ceilings do not consume Steam; it does not displace powders or Wood. During
+one fire phase, newly melted Ice/Snow remains liquid rather than being immediately
+vaporized by another neighboring fire. The existing phases keep their relative
+order, followed by frozen materials and then Steam. New condensate flows during
+the next water phase.
 
 ## Larger worlds and terrain
 
@@ -107,7 +128,7 @@ native frames before changing the renderer or simulation backend.
 [Material research](reviews/research/2026-11-01-materials.md) defines five proposed
 next elements (Ice, Snow, Steam, Lava and Acid) and five later ideas (Stone, Oil,
 Glass, Plants and Salt), including quantity/heat prerequisites and regression
-contracts. Ice/Snow and scripted phase tools are now implemented; Steam/Lava/Acid
+contracts. Ice/Snow/Steam and scripted phase tools are now implemented; Lava/Acid
 remain proposals and require additional transport/reaction state.
 
 [Visual direction](reviews/research/2026-11-01-visual-direction.md) records the

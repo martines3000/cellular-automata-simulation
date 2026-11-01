@@ -1,6 +1,7 @@
 use egui::Color32;
 
 pub const ICE_COLOR: Color32 = Color32::from_rgb(151, 218, 235);
+pub const STEAM_COLOR: Color32 = Color32::from_rgb(184, 196, 227);
 pub const SNOW_COLOR: Color32 = Color32::from_rgb(237, 243, 247);
 
 #[derive(PartialEq, Eq, Clone, Copy)]
@@ -9,6 +10,7 @@ pub enum CellType {
     Water,
     Ice,
     Snow,
+    Steam,
     Dirt,
     Sand,
     Wood,
@@ -21,7 +23,7 @@ pub enum CellType {
 #[derive(PartialEq, Clone, Copy)]
 pub struct Cell {
     pub cell_type: CellType,
-    // Water-equivalent quantity for None/Water/Ice/Snow; lifetime for smoke.
+    // Water-equivalent quantity for None/Water/Ice/Snow/Steam; lifetime for smoke.
     pub mass: f32,
 }
 
@@ -29,7 +31,7 @@ impl Cell {
     pub fn water_quantity(&self) -> f32 {
         if matches!(
             self.cell_type,
-            CellType::None | CellType::Water | CellType::Ice | CellType::Snow
+            CellType::None | CellType::Water | CellType::Ice | CellType::Snow | CellType::Steam
         ) {
             self.mass
         } else {
@@ -39,6 +41,7 @@ impl Cell {
 
     pub fn color(&self) -> Color32 {
         match self.cell_type {
+            CellType::Steam => STEAM_COLOR,
             CellType::Ice => ICE_COLOR,
             CellType::Snow => SNOW_COLOR,
             CellType::Dirt => Color32::BLACK,

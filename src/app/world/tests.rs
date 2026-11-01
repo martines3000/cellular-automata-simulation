@@ -298,7 +298,7 @@ fn fire_indexing_supported_fire_ignites_only_cardinal_wood() {
 }
 
 #[test]
-fn fire_indexing_nonwood_neighbors_are_unchanged() {
+fn fire_indexing_unrelated_neighbors_stay_unchanged_and_liquid_vaporizes() {
     for material in [
         CellType::Water,
         CellType::Sand,
@@ -315,6 +315,11 @@ fn fire_indexing_nonwood_neighbors_are_unchanged() {
         let mut expected = world.data.clone();
         expected[[3, 3]].cell_type = CellType::Smoke;
         expected[[3, 3]].mass = 1.0;
+        if material == CellType::Water {
+            for (y, x) in [(2, 3), (4, 3), (3, 2), (3, 4)] {
+                expected[[y, x]].cell_type = CellType::Steam;
+            }
+        }
         world.tmp = world.data.clone();
         world.update_fire();
         assert!(world.data == expected);

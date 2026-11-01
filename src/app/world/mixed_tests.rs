@@ -128,6 +128,7 @@ pub(super) fn checked_tick(world: &mut World, context: &str) {
         ("smoke", World::update_smoke),
         ("wood", World::update_wood),
         ("frozen", World::update_frozen),
+        ("steam", World::update_steam),
     ] {
         let before = water_mass(world);
         let wood = count(world, CellType::Wood);

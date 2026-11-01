@@ -1,5 +1,9 @@
 pub mod cell;
 mod frozen;
+mod steam;
+
+#[cfg(test)]
+mod steam_tests;
 
 #[cfg(test)]
 mod frozen_tests;
@@ -8,6 +12,8 @@ mod frozen_tests;
 pub(super) enum PhaseTool {
     Freeze,
     Melt,
+    Vaporize,
+    Condense,
 }
 
 #[cfg(test)]
@@ -568,7 +574,8 @@ impl World {
                             && ny < self.data.nrows() as i32
                             && nx < self.data.ncols() as i32
                         {
-                            Self::melt_cell(&mut self.tmp[[ny as usize, nx as usize]]);
+                            let index = [ny as usize, nx as usize];
+                            Self::heat_cell(self.data[index].cell_type, &mut self.tmp[index]);
                         }
                     }
                     if self.data[[y + 1, x]].cell_type.eq(&CellType::None) {
@@ -676,6 +683,9 @@ impl World {
 
         self.tmp.assign(&self.data);
         self.update_frozen();
+
+        self.tmp.assign(&self.data);
+        self.update_steam();
     }
 
     pub fn clear(&mut self) {
@@ -733,7 +743,7 @@ impl World {
                 cell.cell_type = material;
                 cell.mass = match material {
                     CellType::Ice => MAX_MASS,
-                    CellType::Snow => 1.0,
+                    CellType::Snow | CellType::Steam => 1.0,
                     _ => 0.0,
                 };
             }

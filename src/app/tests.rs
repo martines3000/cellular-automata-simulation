@@ -397,3 +397,82 @@ fn frozen_ui_brush_transforms_under_zoom_pan_and_ignores_secondary_clicks() {
         }
     }
 }
+
+#[test]
+fn steam_ui_material_and_phase_tools_roundtrip_without_quantity_changes() {
+    let mut h = Harness::new();
+    let rect = h.canvas();
+    let pos = rect.min + vec2(17.5, 17.5);
+    for (label, expected) in [
+        ("Steam", CellType::Steam),
+        ("Condense", CellType::Water),
+        ("Vaporize", CellType::Steam),
+        ("Condense", CellType::Water),
+        ("Freeze", CellType::Ice),
+        ("Melt", CellType::Water),
+        ("Vaporize", CellType::Steam),
+    ] {
+        let original = h.app.world.data.clone();
+        let control = text_position(&h.input(vec![]), label);
+        h.button(control, PointerButton::Primary, true);
+        h.button(control, PointerButton::Primary, false);
+        assert!(h.app.world.data == original);
+        h.button(pos, PointerButton::Primary, true);
+        h.button(pos, PointerButton::Primary, false);
+        assert!(h.app.world.data[[3, 3]].cell_type == expected, "{label}");
+        assert_eq!(h.app.world.data[[3, 3]].water_quantity(), 1.0);
+    }
+    let control = text_position(&h.input(vec![]), "Eraser");
+    h.button(control, PointerButton::Primary, true);
+    h.button(control, PointerButton::Primary, false);
+    assert!(h.app.phase_tool.is_none());
+    h.button(pos, PointerButton::Primary, true);
+    h.button(pos, PointerButton::Primary, false);
+    assert_eq!(h.app.world.data[[3, 3]].water_quantity(), 0.0);
+}
+
+#[test]
+fn steam_ui_phase_brush_coalesced_clicks_respect_pan_zoom_and_material_borders() {
+    let mut h = Harness::new();
+    h.app.world.block_size = 10.0;
+    h.app.world.shift = vec2(2.0, 1.0);
+    h.app.world.update_pos();
+    h.app.world.data[[5, 6]] = world::cell::Cell {
+        cell_type: CellType::Water,
+        mass: 25.0,
+    };
+    let rect = h.canvas();
+    let pos = rect.min + h.app.world.pos_shift + vec2(65.0, 55.0);
+    for (tool, expected) in [
+        (PhaseTool::Vaporize, CellType::Steam),
+        (PhaseTool::Condense, CellType::Water),
+    ] {
+        h.app.phase_tool = Some(tool);
+        let before = h.app.world.data.clone();
+        h.button(pos, PointerButton::Secondary, true);
+        h.button(pos, PointerButton::Secondary, false);
+        assert!(h.app.world.data == before);
+        h.input(vec![
+            Event::PointerMoved(pos),
+            Event::PointerButton {
+                pos,
+                button: PointerButton::Primary,
+                pressed: true,
+                modifiers: Modifiers::default(),
+            },
+            Event::PointerButton {
+                pos,
+                button: PointerButton::Primary,
+                pressed: false,
+                modifiers: Modifiers::default(),
+            },
+        ]);
+        assert!(h.app.world.data[[5, 6]].cell_type == expected);
+        assert_eq!(h.app.world.data[[5, 6]].mass, 25.0);
+        for ((y, x), cell) in h.app.world.data.indexed_iter() {
+            if [y, x] != [5, 6] {
+                assert!(*cell == before[[y, x]]);
+            }
+        }
+    }
+}

@@ -9,7 +9,7 @@ use eframe::{
     epi,
 };
 use egui::{pos2, vec2, Rect};
-use world::cell::{CellType, ICE_COLOR, SNOW_COLOR};
+use world::cell::{CellType, ICE_COLOR, SNOW_COLOR, STEAM_COLOR};
 use world::{PhaseTool, World};
 
 pub struct App {
@@ -22,7 +22,7 @@ pub struct App {
     phase_tool: Option<PhaseTool>,
 }
 
-const MATERIALS: [(CellType, &str, &str, Color32); 8] = [
+const MATERIALS: [(CellType, &str, &str, Color32); 9] = [
     (
         CellType::Water,
         "Water",
@@ -64,6 +64,12 @@ const MATERIALS: [(CellType, &str, &str, Color32); 8] = [
         "Snow",
         "Light powder. Melts beside water or fire; one water unit per cell.",
         SNOW_COLOR,
+    ),
+    (
+        CellType::Steam,
+        "Steam",
+        "Rises and drifts without expiring. Ice, Snow or Condense returns water.",
+        STEAM_COLOR,
     ),
     (
         CellType::None,
@@ -212,24 +218,35 @@ impl App {
                             }
                         });
                     }
-                    ui.horizontal(|ui| {
-                        for (tool, name) in
-                            [(PhaseTool::Freeze, "Freeze"), (PhaseTool::Melt, "Melt")]
-                        {
-                            let selected = self.phase_tool == Some(tool);
-                            if ui
-                                .add(Button::new(name).sense(Sense::click_and_drag()).stroke(
-                                    Stroke::new(
-                                        if selected { 2.0 } else { 1.0 },
-                                        if selected { theme::ACCENT } else { theme::LINE },
-                                    ),
-                                ))
-                                .clicked()
-                            {
-                                self.phase_tool = Some(tool);
+                    for pair in [
+                        (PhaseTool::Freeze, "Freeze"),
+                        (PhaseTool::Melt, "Melt"),
+                        (PhaseTool::Vaporize, "Vaporize"),
+                        (PhaseTool::Condense, "Condense"),
+                    ]
+                    .chunks(2)
+                    {
+                        ui.horizontal(|ui| {
+                            let width = (ui.available_width() - ui.spacing().item_spacing.x) / 2.0;
+                            for &(tool, name) in pair {
+                                let selected = self.phase_tool == Some(tool);
+                                if ui
+                                    .add_sized(
+                                        vec2(width, 30.0),
+                                        Button::new(name).sense(Sense::click_and_drag()).stroke(
+                                            Stroke::new(
+                                                if selected { 2.0 } else { 1.0 },
+                                                if selected { theme::ACCENT } else { theme::LINE },
+                                            ),
+                                        ),
+                                    )
+                                    .clicked()
+                                {
+                                    self.phase_tool = Some(tool);
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                     let (_, material_name, material_description, _) = MATERIALS
                         .iter()
                         .find(|(kind, _, _, _)| *kind == self.world.selected_cell_type)
@@ -242,6 +259,14 @@ impl App {
                         Some(PhaseTool::Melt) => (
                             "Melt",
                             "Returns ice or snow to water. No material is added or removed.",
+                        ),
+                        Some(PhaseTool::Vaporize) => (
+                            "Vaporize",
+                            "Turns existing water into Steam without changing its quantity.",
+                        ),
+                        Some(PhaseTool::Condense) => (
+                            "Condense",
+                            "Returns Steam to water without adding or removing material.",
                         ),
                         None => (*material_name, *material_description),
                     };

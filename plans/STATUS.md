@@ -6,8 +6,8 @@ Assessment: [review-report.html](../review-report.html#F04).
 ## Verification coordination
 
 - Owner: Codex, this chat; sole editor of `src/app/world/mod.rs`.
-- Active job: none. Frozen-water local/native checks complete, owned app stopped
-  and shared lock released. Timed sampling remains deferred at the user's request.
+- Active job: none. Steam local/native checks complete; owned app stopped and
+  shared lock released. Timed sampling remains deferred at the user's request.
 - Shared lock for cooperating workers:
   `/tmp/cellular-automata-simulation-verification.lock` (directory; owner recorded
   inside). Inspect process inventory before acquiring; never remove another owner's
@@ -61,7 +61,7 @@ warning. Dependency migration remains separate. Browser delivery was removed
 
 All sixteen historical findings are implemented or retired by browser removal.
 Historical reports and extracted evidence remain byte-for-byte unchanged. Counts
-in earlier rows describe those commits; current suite contains 88 correctness
+in earlier rows describe those commits; current suite contains 101 correctness
 tests plus 2 ignored performance helpers (including the follow-ups below).
 
 [Completed native follow-up](completed/native-polish.md) and
@@ -101,3 +101,19 @@ Next bounded material task: conserved Steam transport and condensation, separate
 from Smoke lifetime; real thermal energy, Lava/Acid and visual effects remain
 separate increments. The dated research stays historical; Ice/Snow are now shipped
 through the scripted rules described in README. Timings remain deferred.
+
+Latest material follow-up: [Steam](completed/steam.md), implemented/verified in
+the working tree, awaiting commit/push. Steam rises/drifts, bubbles through Water,
+retains trapped quantity, condenses beside Ice/Snow, and has conserved Vaporize/
+Condense tools. Fire vaporizes pre-existing liquid; snapshot rules prevent freshly
+melted frozen material from vaporizing again in the same fire phase.
+
+`bash check.sh` passes: 101 debug/release correctness tests, strict Clippy/fmt,
+native check/build and 0 doc tests; 2 ignored helpers. Separate untimed fixture
+smoke passes all 32 cases; release app built. Native Steam/Condense presentation
+checked; a later UI action failed with noWindowsAvailable while the app remained
+alive, so Vaporize is verified headlessly. App stopped, lock released. Cell stays
+8 B; seven phases now copy before updating; benchmark comparison notes updated.
+
+Next bounded task: Lava plus Stone with explicit reaction quantities; Acid/thermal
+energy and optional effects remain separate. No performance timings collected.

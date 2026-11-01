@@ -55,6 +55,7 @@ fn scratch_reuse_matches_the_original_clone_before_each_phase() {
             World::update_smoke,
             World::update_wood,
             World::update_frozen,
+            World::update_steam,
         ] {
             reference.tmp = reference.data.clone();
             update(&mut reference);

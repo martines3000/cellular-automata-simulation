@@ -19,6 +19,13 @@ impl World {
                 cell.cell_type = CellType::Ice;
             }
             PhaseTool::Melt => Self::melt_cell(cell),
+            PhaseTool::Vaporize
+                if matches!(cell.cell_type, CellType::Water | CellType::None)
+                    && cell.water_quantity() > 0.0 =>
+            {
+                cell.cell_type = CellType::Steam;
+            }
+            PhaseTool::Condense => Self::condense_cell(cell),
             _ => {}
         }
     }
