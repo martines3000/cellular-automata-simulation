@@ -102,8 +102,8 @@ from Smoke lifetime; real thermal energy, Lava/Acid and visual effects remain
 separate increments. The dated research stays historical; Ice/Snow are now shipped
 through the scripted rules described in README. Timings remain deferred.
 
-Latest material follow-up: [Steam](completed/steam.md), implemented/verified in
-the working tree, awaiting commit/push. Steam rises/drifts, bubbles through Water,
+Latest material follow-up: [Steam](completed/steam.md), committed/pushed as
+`50444a8` on `codex/simulation-correctness-fixes`. Steam rises/drifts, bubbles through Water,
 retains trapped quantity, condenses beside Ice/Snow, and has conserved Vaporize/
 Condense tools. Fire vaporizes pre-existing liquid; snapshot rules prevent freshly
 melted frozen material from vaporizing again in the same fire phase.

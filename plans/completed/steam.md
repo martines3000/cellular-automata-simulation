@@ -1,6 +1,6 @@
 # Conserved Steam transport and condensation
 
-- Status: implemented and verified in the working tree, 2026-11-01; owner: Codex this chat.
+- Status: complete, committed/pushed as 50444a8, 2026-11-01; owner: Codex this chat.
 - Start: clean aa71b9b, one worktree, no active simulator/check processes.
 - Context: next bounded task from [frozen water](../completed/frozen-water.md) and
   [material research](../../reviews/research/2026-11-01-materials.md).
@@ -35,7 +35,7 @@
 - [x] Implement Steam, transitions, movement and palette/tool integration.
 - [x] Complete conservation/blocked/contact/threshold/mixed/input regressions.
 - [x] Complete serialized native checks and UI inspection; update docs/limitations.
-- [ ] Record actual revision, commit/push and hand off.
+- [x] Record actual revision, commit/push and hand off (`50444a8`).
 
 ## Verification / recovery
 
@@ -47,7 +47,7 @@ remove only owned temporary artifacts, stop only its app and release its lock.
 
 ## Outcomes
 
-Implemented in the working tree. Targeted milestone: 101 debug correctness tests
+Implemented in `50444a8`. Targeted milestone: 101 debug correctness tests
 pass, two performance helpers ignored. Thirteen new regressions (11 world, two UI)
 cover quantity bit preservation, tiny/high-pressure values, displaced liquid and
 passive residue, blocked/cold boundaries, multi-source targets, no same-phase
@@ -88,7 +88,7 @@ toolchain changes. Historical assessment/evidence files remain unchanged.
 
 ## Delivery and next task
 
-Working-tree source: Steam type/color/quantity accessor, new steam.rs, phase brushes,
+Source in `50444a8`: Steam type/color/quantity accessor, new steam.rs, phase brushes,
 fire snapshot rule and seven-phase schedule. App palette/tools and independent
 phase oracles updated. README explains sources/sinks, no lifetime and scripted
 limits. PERFORMANCE records the added work and limits of historical comparisons.
@@ -96,4 +96,5 @@ limits. PERFORMANCE records the added work and limits of historical comparisons.
 Next bounded material work is Lava with a distinct Stone cooling product and an
 explicit conversion budget. It requires its own transport/contact design; do not
 reuse Water.mass as lava or silently erase reaction products. Acid and real heat
-remain later increments. Revision/commit outcome will be recorded once created.
+remain later increments. Source, tests and documentation committed/pushed as
+`50444a8` on `codex/simulation-correctness-fixes`.
