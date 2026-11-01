@@ -89,13 +89,13 @@ Plants/Salt. [Visual roadmap](../reviews/research/2026-11-01-visual-direction.md
 proposes finite feedback, material effects and presets, with profiling before
 renderer/GPU changes. These are researched proposals, not implemented features.
 
-Latest material follow-up: [Frozen water](completed/frozen-water.md), implemented
-and verified in the working tree. Ice/Snow preserve water-equivalent quantities;
+Latest material follow-up: [Frozen water](completed/frozen-water.md), committed/
+pushed as `a2d8038` on `codex/simulation-correctness-fixes`. Ice/Snow preserve water-equivalent quantities;
 Freeze/Melt tools, falling/floating/piling and scripted fire/water-contact melting
 are integrated. Full local checks pass: 88 debug/release correctness tests,
 strict Clippy/fmt, native debug/release builds, 0 doc tests; 2 ignored helpers.
 Separate non-timing workload smoke passes all 32 cases. Native Ice/Melt/Freeze
-presentation checked. Cell stays 8 B; no dependencies changed. Awaiting commit/push.
+presentation checked. Cell stays 8 B; no dependencies changed. Implementation and records are committed.
 
 Next bounded material task: conserved Steam transport and condensation, separate
 from Smoke lifetime; real thermal energy, Lava/Acid and visual effects remain

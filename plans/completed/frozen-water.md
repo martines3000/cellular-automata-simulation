@@ -1,6 +1,6 @@
 # Frozen water: Ice, Snow and phase brushes
 
-- Status: implemented and verified in the working tree, 2026-11-01; owner: Codex this chat.
+- Status: complete, committed/pushed as a2d8038, 2026-11-01; owner: Codex this chat.
 - Start: clean tree at eae4ff3; one worktree, no verification/simulator processes.
 - Context: continue the [material roadmap](../../reviews/research/2026-11-01-materials.md)
   after the game UI. Timing measurements remain deferred.
@@ -15,7 +15,7 @@
 - [x] Implement materials, phase brushes and UI.
 - [x] Verify conservation, thresholds, conflicts, border/edit integrity and UI input.
 - [x] Complete serialized local checks and native inspection.
-- [ ] Record outcomes, commit/push and hand off.
+- [x] Record outcomes, commit/push and hand off (`a2d8038`).
 
 ## Decisions and assumptions
 
@@ -96,7 +96,7 @@ Historical reports/extracts remain unchanged; no unrelated starting changes exis
 
 ## Outcome and next bounded task
 
-Working-tree implementation: Cell types/quantity accessor, frozen movement module,
+Implemented in `a2d8038`: Cell types/quantity accessor, frozen movement module,
 scripted fire contact, Freeze/Melt paint routing and palette descriptions. Shared
 paint hit testing and phase oracles updated; 16 additional regressions (14 world,
 2 UI), including threshold bit neighbors, multi-source targets, repeated mixed
@@ -106,4 +106,5 @@ the source/sink distinction between painting and phase tools.
 Next: design/implement Steam with a conserved water-equivalent quantity and explicit
 condensation/blocked-gas rules, distinct from expiring Smoke. Real heat/energy,
 Lava/Acid and optional visual effects remain separate increments; timings stay
-deferred. Actual implementation revision will be recorded after committing.
+deferred. Source/tests/docs are committed and pushed as `a2d8038` on
+`codex/simulation-correctness-fixes`.
